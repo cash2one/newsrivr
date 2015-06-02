@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!--[if lt IE 9]>		
+	<script src="/static/js/html5.js"></script>
+	<![endif]-->
+
+	<meta charset="utf-8">
+	<title>NewsRivr | {% block title %}{% endblock %}</title>
+	<link media="all" rel="stylesheet" href="/static/css/all.css">
+	<script type="text/javascript" src="http://use.typekit.com/nsy7xbx.js"></script>
+	<script type="text/javascript">try{Typekit.load();}catch(e){}</script>
+	{% block head %}{% endblock %}
+</head>
+<body class="twitter-page home" {% block body %}{% endblock %}>
+	<div class="w1">
+		<div id="wrapper">
+			{% block logo %}{% endblock %}
+			<section id="main">
+				<div class="main-frame">
+					<div class="main-content">
+						<div class="visual">&nbsp;</div>
+						{% block content %}{% endblock %}
+					</div>
+				</div>
+			</section>
+		</div>
+	</div>
+	<footer id="footer">
+		<div class="frame">
+			<nav>
+				<ul>
+					<li>
+					<script language="javascript" type="text/javascript">
+						var date;
+						date = new Date()
+						document.write('&copy; ');
+						document.write(date.getFullYear());
+					</script>&nbsp;NewsRivr
+					</li>
+				</ul>
+			</nav>
+		</div>
+	</footer>
+</body>
+</html>

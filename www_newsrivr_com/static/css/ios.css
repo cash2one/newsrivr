@@ -1,0 +1,58 @@
+
+/* General Reset */
+* {font-size: 100.01%;}
+html {
+	font-size: 62.5%;
+	height:100%;
+}
+
+body {
+	height:100%;
+	margin:0;
+	color:#333;
+	font:1.5em/1.3em "ff-milo-web-1","ff-milo-web-2", Helvetica, sans-serif;	
+}
+
+/* top section (gray box) */
+.post header {
+	background:url(../images/bg-box-color2.gif) no-repeat 100% 100%;
+	padding:0 0 12px;
+}
+.post header .frame {
+	padding: 8px 20px 0;
+	overflow:hidden;
+	background:url(../images/bg-box-color2.gif) repeat-y -768px 0;
+	position:relative;
+	text-shadow:0 1px 0 #fff;
+}
+/* small buttons */
+.post header .btn {
+	background:url(../images/btn-buttons.gif) no-repeat;
+	width:17px;
+	height:17px;
+	text-indent:-9999px;
+	overflow:hidden;
+	font-size:0;
+	line-height:0;
+	position:absolute;
+}
+/* share */
+.post header .share {
+	top:0;
+	right:13px;
+}
+/* slide up/down */
+.post header .open-close {
+	background-position:-34px 0;
+	bottom: 3px;
+	right:13px;
+}
+.post.open header .open-close {background-position:-17px 0;}
+/* top bar */
+.post header .bar {
+	overflow:hidden;
+	padding:0 1px 13px;
+}
+
+
+.post em {font-family:"ff-milo-web-1","ff-milo-web-2", Helvetica, sans-serif;font-style:italic;}

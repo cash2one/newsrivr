@@ -1,0 +1,14 @@
+xxx
+
+# register a new user
+userid = add_user(username, password="", email)
+
+# request user id
+userid = get_userid(username, password)
+
+# add a feed with the userid
+1|0 = add_feed_userid(userid, feed)
+
+#add a feed with the username (does lookup internally)
+1|0 = add_feed_username(username, feed)
+

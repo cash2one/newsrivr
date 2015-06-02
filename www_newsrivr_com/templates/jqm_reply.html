@@ -1,0 +1,83 @@
+{% extends "jqm_template.html" %}
+
+{% block content %}
+
+<div data-role="page" id='{{drop.id_str}}'>
+	
+	<div data-role="header">
+	  <a href="#" class="ui-btn-left ui-btn ui-btn-up-a ui-btn-icon-left ui-btn-corner-all ui-shadow" data-rel="back" data-icon="arrow-l" data-theme="a"><span class="ui-btn-inner ui-btn-corner-all"><span class="ui-btn-text">Back</span><span class="ui-icon ui-icon-arrow-l ui-icon-shadow"></span></span></a>
+	  <h1>Share tweet</h1>
+	</div>
+	
+	<div data-role="content" class="ui-body ui-body-b" role="main">	
+		<div class="img-container"> 
+			<div class="img-box">
+				<div class="img-holder">	<img src="{{drop.profile_image_url_big}}" align='right' width='64' alt="Image of {{drop.name}}"></div>
+				<span class="top-l">&nbsp;</span><span class="top-r">&nbsp;</span><span class="bottom-l">&nbsp;</span><span class="bottom-r"></span>
+			</div> 
+		</div>
+		<h3 style="white-space: normal;">{{drop.org_content|safe}}</h3>
+		{% if drop.retweeted %}By {{drop.retweet_name}} retweeted {% endif %}<a target="_blank" href='http://twitter.com/#!/{{drop.screen_name}}/status/{{drop.id_str}}'>{{drop.timediff}}</a> by <a href='/page/1/{{drop.screen_name}}/{{randomnumber}}' rel='external'>{{drop.name}}</a>
+		<a href="http://twitter.com/#!/{{drop.screen_name}}" target="_blank"><img src='/static/images/smallbird.png' border=0></a>
+	</div>
+	
+	<br/>
+	<div class="ui-body ui-body-c"> 
+		<form id="shareform" onsubmit="return false;">
+			<div data-role="fieldcontain">
+				<fieldset data-role="controlgroup">
+					<legend>Reply to:</legend> 
+					<textarea id="tweet_reply_text">@{{drop.screen_name}} </textarea>
+				</fieldset>
+			</div>	
+
+			<div data-role="fieldcontain">
+				<fieldset data-role="controlgroup">
+					<legend></legend>
+					<a href="javascript:tweetReply('{{drop.id_str}}', document.getElementById('tweet_reply_text').value);" data-role="button">Submit</a>
+				</fieldset>
+			</div>	
+		</form>
+	</div>
+
+<script language='javascript'>
+<!--
+function clog(s) {
+	if ((navigator.userAgent).indexOf("Firefox") == -1) {
+		if ((navigator.userAgent).indexOf("MSIE") == -1) {
+			console.log(new Date() + " " + s);
+		} else {
+			if (typeof console == "object") {
+				console.log(s);
+			}
+		}
+	}
+}
+
+function tweetReply(id_str, text) {
+	var data = {};
+	data["id_str"] = id_str;
+	data["text"] = text;
+	alert(data["text"]);
+	return;
+	$.ajax({
+		type: "POST",
+		url: "/json/tweetReply",
+		timeout: 15000,
+		dataType: "json",
+		cache: false,
+		data: data,
+		success: function(data, text_status) {
+			history.back();
+		},
+		complete: function(data, text_status) {},
+		error: function(objRequest) {
+			console.log(objRequest);
+		}
+	});
+}
+-->
+</script>
+
+</div>
+{% endblock %}

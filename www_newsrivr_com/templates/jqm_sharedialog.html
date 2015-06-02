@@ -1,0 +1,173 @@
+{% extends "jqm_template.html" %}
+
+{% block content %}
+
+<div data-role="page" id='{{drop.id_str}}'>
+	
+	<div data-role="header">
+	  <a href="#" class="ui-btn-left ui-btn ui-btn-up-a ui-btn-icon-left ui-btn-corner-all ui-shadow" data-rel="back" data-icon="arrow-l" data-theme="a"><span class="ui-btn-inner ui-btn-corner-all"><span class="ui-btn-text">Back</span><span class="ui-icon ui-icon-arrow-l ui-icon-shadow"></span></span></a>
+	  <h1>Share tweet</h1>
+	</div>
+	
+	<div data-role="content" class="ui-body ui-body-b" role="main">	
+		<div class="img-container"> 
+			<div class="img-box">
+				<div class="img-holder">	<img src="{{drop.profile_image_url_big}}" align='right' width='64' alt="Image of {{drop.name}}"></div>
+				<span class="top-l">&nbsp;</span><span class="top-r">&nbsp;</span><span class="bottom-l">&nbsp;</span><span class="bottom-r"></span>
+			</div> 
+		</div>
+		<h3 style="white-space: normal;">{{drop.org_content|safe}}</h3>
+		{% if drop.retweeted %}By {{drop.retweet_name}} retweeted {% endif %}<a target="_blank" href='http://twitter.com/#!/{{drop.screen_name}}/status/{{drop.id_str}}'>{{drop.timediff}}</a> by <a href='/page/1/{{drop.screen_name}}/{{randomnumber}}' rel='external'>{{drop.name}}</a>
+		<a href="http://twitter.com/#!/{{drop.screen_name}}" target="_blank"><img src='/static/images/smallbird.png' border=0></a>
+	</div>
+	
+	<br/>
+	
+	<div class="ui-body ui-body-c"> 
+		<form id="shareform" onsubmit="return false;">
+			
+			<input type="hidden" name="share_id_str" id="share_id_str" value="{{drop.objid}}" />
+			
+			<div data-role="fieldcontain">
+				<fieldset data-role="controlgroup">
+					<legend>Select a previously used address</legend> 
+					<select id="previous_emails" onchange="javascript:toEmailField()">
+					   <option value=''></option>
+					   {%for e in sd.previous_emails %}
+						   <option value='{{e}}'>{{e}}</option>
+					   {%endfor%}
+					</select>
+				</fieldset>
+			</div>
+
+			<div data-role="fieldcontain">
+				<fieldset data-role="controlgroup">
+					<legend>On submit</legend>
+					<input type="checkbox" name="email_clear_history" id="email_clear_history" class="custom" />
+					<label for="email_clear_history">Clear emailaddress history</label>
+				</fieldset>
+			</div>			
+			
+			<div data-role="fieldcontain">
+				<fieldset data-role="controlgroup">
+					<legend>To email addresses<br/><i>separate with commas)</i></label></legend>					
+					<input type="text" id="share_email" name="email_friend" value="" required="required"  />
+					<input type="checkbox" id="email_add_used_addresses" name="email_add_used_addresses">
+					<label for="email_add_used_addresses">Add to used addresses</label>
+				</fieldset>
+			</div>			
+
+			<div data-role="fieldcontain">
+				<fieldset data-role="controlgroup">
+					<legend>Your email address<br/><i>Used for replies (optional)</i></label></legend>					
+					<input type="email" id="email_reply" name="email_reply" value="{{sd.reply}}"  />
+					<input type="checkbox" {% if sd.cc %}checked{% endif %} id="email_cc" name="email_cc">
+					<label for="email_cc">Blind copy to myself</label>
+				</fieldset>
+			</div>	
+			
+			<div data-role="fieldcontain">
+				<fieldset data-role="controlgroup">
+					<legend>Optional text message</legend> 
+					<textarea id="email_body"></textarea>
+				</fieldset>
+			</div>	
+
+			<div data-role="fieldcontain">
+				<fieldset data-role="controlgroup">
+					<legend></legend>
+					<a href="javascript:sendDrop()" data-role="button">Submit</a>
+				</fieldset>
+			</div>	
+		</form>
+	</div>
+
+<script language='javascript'>
+function clog(s) {
+	if ((navigator.userAgent).indexOf("Firefox") == -1) {
+		if ((navigator.userAgent).indexOf("MSIE") == -1) {
+			console.log(new Date() + " " + s);
+		} else {
+			if (typeof console == "object") {
+				console.log(s);
+			}
+		}
+	}
+}
+
+function toEmailField() {
+	$("#share_email").val($("#previous_emails").val());
+}
+
+function sendDrop() {
+	var share = true;
+	if ($("#share_email").val() == "") {
+		$("#share_email").select();
+		return;
+	}
+	var confirmdeletehistory = false;
+	if (share) {
+		var data = {};
+		data["_id"] = $("#share_id_str").val();
+		data["to"] = $("#share_email").val();
+		data["reply"] = $("#email_reply").val();
+		data["body"] = $("#email_body").val();
+		data["previous_emails"] = $("#previous_emails").val();
+		data["cc"] = $('#email_cc').is(':checked');
+		data["email_clear_history"] = "false";
+		if ($('#email_clear_history').is(':checked')) {
+			confirmdeletehistory = confirm("Are you sure you want to delete the mail history?")
+			if (confirmdeletehistory) {
+				data["email_clear_history"] = $('#email_clear_history').is(':checked');
+			}
+		}
+
+		data["email_add_used_addresses"] = $('#email_add_used_addresses').is(':checked');
+		var json_url = "/json/mail/sharedatauser/";
+		clog("shareDrop: " + json_url);
+		$.ajax({
+			type: 'POST',
+			url: json_url,
+			dataType: 'json',
+			cache: false,
+			data: data,
+			success: function(data, text_status) {
+				clog("gelukt")
+				history.back();
+			},
+			complete: function(data, text_status) {},
+			error: function(objRequest) {
+				clog(objRequest);
+			}
+		});
+	};
+
+	if ($("#email_clear_history").is(":checked")) {
+		$("#previous_emails option").each(function(i) {
+			if (confirmdeletehistory) {
+				$(this).remove();
+			}
+		});
+		if (confirmdeletehistory) {
+			$("#previous_emails").append($('<option></option>').val("").html(""));
+		}
+		$('#email_clear_history').attr('checked', false);
+	}
+	if ($("#email_add_used_addresses").is(":checked")) {
+		var alreadyin = false;
+		$("#previous_emails option").each(function(i) {
+			if ($(this).val() == $("#share_email").val()) {
+				alreadyin = true;
+			}
+		});
+		if (!alreadyin) {
+			$("#previous_emails").append($('<option></option>').val($("#share_email").val()).html($("#share_email").val()));
+		}
+		$('#email_add_used_addresses').attr('checked', false);
+	};
+	return true
+};
+</script>
+
+</div>
+{% endblock %}

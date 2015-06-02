@@ -1,0 +1,12 @@
+
+<VirtualHost *:80>
+  ServerName esther.active8.nl
+  SetHandler python-program
+  DocumentRoot /home/rabshakeh/www/www_newsrivr_com
+  PythonHandler django.core.handlers.modpython
+  PythonPath "['/home/rabshakeh/www', '/home/rabshakeh/www/www_newsrivr_com'] + sys.path"
+  SetEnv DJANGO_SETTINGS_MODULE www_newsrivr_com.settings
+  SetEnv PYTHON_EGG_CACHE /tmp
+  PythonDebug Off
+  ErrorLog /usr/log/esther_active8_nl.log
+</VirtualHost>

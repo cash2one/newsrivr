@@ -1,0 +1,716 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+	<meta charset="utf-8">
+	<title>NewsRivr</title>
+	<link media="all" rel="stylesheet" href="/static/css/all.css">
+    <link rel="shortcut icon" href="/static/images/favicon.ico" />        
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.3.2/jquery.min.js"></script> 
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.7.1/jquery-ui.min.js"></script>
+
+	<!--[if lt IE 9]>		
+	<script src="/static/js/html5.js"></script>
+	<![endif]-->
+	<script type="text/javascript" src="/static/js/mustache.js"></script>
+	<script type="text/javascript" src="/static/js/infinitescroll.js"></script>
+	<link rel="apple-touch-icon" href="/static/images/touch-icon-iphone.png" />
+	<link rel="apple-touch-icon" sizes="72x72" href="/static/images/touch-icon-ipad.png" />
+	<link rel="apple-touch-icon" sizes="114x114" href="/static/images/touch-icon-iphone4.png" />	
+	<link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.10/themes/base/jquery-ui.css" type="text/css" media="all" /> 
+<style>
+/* override jquery-ui.css */
+.ui-widget { font-family: "ff-milo-web-1","ff-milo-web-2", Helvetica, sans-serif;/*{ffDefault}*/; font-size: 1.1em/*{fsDefault}*/; }
+.ui-widget input, .ui-widget select, .ui-widget textarea, .ui-widget button { font-family: "ff-milo-web-1","ff-milo-web-2", Helvetica, sans-serif;/*{ffDefault}*/; font-size: 1em; }
+.ui-widget-overlay { background: #000 url(/static/images/bg-overlay.png); opacity: .8;filter:Alpha(Opacity=80); }
+</style>
+<script type="text/javascript" src="http://use.typekit.com/nsy7xbx.js"></script>
+<script type="text/javascript">try{Typekit.load();}catch(e){}</script>
+
+	
+<script type = "text/javascript" >
+/* ------------------------------------------------------------------------------------------ */
+
+var n_vars = {
+    self: this,
+    page_num: 0,
+    has_next_page: null,
+    first_page: null,
+    first_page_has_next: false,
+    resetting: false,
+    base_title: "NewsRivr | {{title}}",
+    drops_next_page: null,
+    docloc: "/{{screen_name}}",
+    newdropsvisible: false,
+    get_available_drops: null,
+    loading: false,
+    eventlooprunning: false,
+    $dialog: null,
+    screen_name: "{{screen_name}}",
+};
+
+/* ------------------------------------------------------------------------------------------ */
+
+function clog(s) {
+    if ((navigator.userAgent).indexOf("Firefox") == -1) {
+        if ((navigator.userAgent).indexOf("MSIE") == -1) {
+            console.log(new Date() + " " + s);
+        };
+    };
+}
+
+/* ------------------------------------------------------------------------------------------ */
+
+function resetDrops() {
+    $("#loading-indicator").show();
+    clog("resetDrops");
+    document.location = n_vars.docloc + "#p1"
+    $('.post').each(function(index) {
+        $(this).remove()
+    });
+    $("#lessdrops").hide();
+    $("#newdrops").hide();
+    $("#moredrops").hide();
+    n_vars.resetting = true;
+    var json_url = "/json/resetcookietimestamp/";
+    $.ajax({
+        url: json_url,
+        dataType: 'json',
+        success: function(data, text_status) {
+            document.title = n_vars.base_title;
+            n_vars.page_num = 0;
+            clog("reset data");
+            if ($.browser.msie) {
+                document.getElementById("newdrops-anchor").innerHTML = getHtmlDrops(n_vars.first_page);
+            } else {
+                $("#newdrops-anchor").before(getHtmlDrops(n_vars.first_page));
+            };
+            n_vars.drops_next_page = null;
+            if (n_vars.first_page_has_next) {
+                $("#moredrops").show();
+            };
+			$(".frame").hover(		
+				function() {
+					$(this).children(".iconset").stop().animate({
+						"opacity": "1"
+					}, "slow");
+				}, function() {
+					$(this).children(".iconset").stop().animate({
+						"opacity": "0"
+					}, "slow");
+			});		            
+            setTimeout("n_varsresettingFalse();", 3000);
+            $("#loading-indicator").hide();
+            $(".post").animate({
+                "opacity": "1"
+            }, 1000);
+            n_vars.newdropsvisible = false;
+        },
+        complete: function(data, text_status) {
+            n_vars.newdropsvisible = false;
+        },
+        error: function(objRequest) {}
+    });
+};
+
+/* ------------------------------------------------------------------------------------------ */
+
+function getAvailableDrops() {
+	var json_url = "/json/newdropscount/" + n_vars.screen_name;
+	$.ajax({
+		url: json_url,
+		dataType: 'json',
+		cache: false,
+		success: function(data, text_status) {
+			len = parseInt(data["cnt"]);
+			if (len > 0) {
+				n_vars.first_page = data;
+				n_vars.first_page_has_next = data["has_next"];
+				if (len == 1) {
+					$("#newitemsitems").text("item");
+				} else {
+					$("#newitemsitems").text("items");
+				}
+				if (len > 10) {
+					len = "10+"
+				}
+				if (n_vars.resetting == false) {
+					var new_title = "(" + len + ") " + n_vars.base_title;
+					document.title = new_title;
+					if (n_vars.newdropsvisible == false) {
+						$("#newdrops").animate({
+							"opacity": "1.0"
+						}, 2500);
+						$("#newdrops").show("blind", {
+							percent: 100
+						}, 1500, null);
+						n_vars.newdropsvisible = true;
+					};
+				}
+			} else {
+				$("#newdrops").hide();
+				n_vars.newdropsvisible = false;
+				document.title = n_vars.base_title;
+			}
+			jQuery("#newitems").text(len);
+		},
+		complete: function(data, text_status) {},
+		error: function(objRequest) {}
+	});
+};
+
+/* ------------------------------------------------------------------------------------------ */
+
+function eventloop() {
+    if ((new Date().getTime() - n_vars.get_available_drops) > 60000) {
+        if (n_vars.resetting == false) {
+            getAvailableDrops();
+        };
+        n_vars.get_available_drops = new Date().getTime();
+    };
+    setTimeout("eventloop();", 2500);
+};
+
+/* ------------------------------------------------------------------------------------------ */
+
+// open-close plugin
+jQuery.fn.OpenClose = function(_options) {
+    // default options
+    var _options = jQuery.extend({
+        activeClass: 'active',
+        opener: '.opener',
+        slider: '.slide',
+        animSpeed: 400,
+        animStart: false,
+        animEnd: false,
+        effect: 'fade',
+        event: 'click'
+    }, _options);
+
+    return this.each(function() {
+        // options
+        var _holder = jQuery(this);
+        var _slideSpeed = _options.animSpeed;
+        var _activeClass = _options.activeClass;
+        var _opener = jQuery(_options.opener, _holder);
+        var _slider = jQuery(_options.slider, _holder);
+        var _animStart = _options.animStart;
+        var _animEnd = _options.animEnd;
+        var _effect = _options.effect;
+        var _event = _options.event;
+        if (_slider.length) {
+            _opener.bind(_event, function() {
+                if (!_slider.is(':animated')) {
+                    if (typeof _animStart === 'function') _animStart();
+                    if (_holder.hasClass(_activeClass)) {
+                        _slider[_effect == 'fade' ? 'fadeOut' : 'slideUp'](_slideSpeed, function() {
+                            if (typeof _animEnd === 'function') _animEnd();
+                        });
+                        _holder.removeClass(_activeClass);
+                    } else {
+                        _holder.addClass(_activeClass);
+                        _slider[_effect == 'fade' ? 'fadeIn' : 'slideDown'](_slideSpeed, function() {
+                            if (typeof _animEnd === 'function') _animEnd();
+                        });
+                    }
+                }
+                return false;
+            });
+            if (_holder.hasClass(_activeClass)) _slider.show();
+            else _slider.hide();
+        }
+    });
+}
+
+/* ------------------------------------------------------------------------------------------ */
+
+
+var seconds=10;
+function countdown() {
+    $("#secondsdisplay").text(seconds);
+    seconds = seconds - 1
+    if (seconds<0) {
+        seconds = 0;
+    };
+    setTimeout("countdown()", 1000);
+}
+
+function loadItems() {
+    clog("loadItems page:" + n_vars.page_num);
+    if (n_vars.screen_name=="") {
+        n_vars.screen_name = "None";
+    }
+    if (n_vars.page_num < 0) {
+        clog("n_vars.page_num < 0 this should not happen");
+        n_vars.page_num = 0;
+    }
+    if (document.location) {
+        var hash = document.location.hash.toString();
+        hash = hash.replace("#p", "");
+        clog("hash:" + hash)
+        if (hash == "") {
+            n_vars.page_num = 0;
+        } else {
+            n_vars.page_num = parseInt(hash) - 1;
+        }
+    };
+    var items_received = 0;
+    var json_url = "/json/" + (n_vars.page_num + 1) + '/' + n_vars.screen_name + "/";
+    clog("LoadItems no cache: " + json_url);
+    $.ajax({
+        url: json_url,
+        dataType: 'json',
+        success: function(data, text_status) {
+            clog("loaditems succes");
+            n_vars.page_num = n_vars.page_num + 1;
+            $("#moredrops").show();
+            if (n_vars.docloc == "/None") {
+                n_vars.docloc = "/";
+            }
+            document.location = n_vars.docloc + "#p" + n_vars.page_num;
+            n_vars.has_next_page = data.has_next;
+            var html = "";
+            items_received = parseInt(data.total_for_user);
+            if (items_received < 1) {
+                $("#newusermessage").show();
+            } else {
+                $("#newusermessage").hide();
+                html = getHtmlDrops(data);
+                if ($.browser.msie) {
+                    document.getElementById("newdrops-anchor").innerHTML = document.getElementById("newdrops-anchor").innerHTML + html;
+                } else {
+                    $("#newdrops-anchor").before(html);
+                }
+                if (n_vars.has_next_page) {
+                    $("#moredrops").show();
+                };
+                if (n_vars.page_num != 1) {
+                    $("#lessdrops").show();
+                };
+                n_vars.loading = false;
+                if (!n_vars.eventlooprunning) {
+                    n_vars.get_available_drops = new Date().getTime();
+                    eventloop();
+                    n_vars.eventlooprunning = true;
+                }
+                $(".frame").hover(		
+                    function() {
+                        $(this).children(".iconset").stop().animate({
+                            "opacity": "1"
+                        }, "slow");
+                    }, function() {
+                        $(this).children(".iconset").stop().animate({
+                            "opacity": "0"
+                        }, "slow");
+                });	            
+                {% if ios %}
+                    $(".iconset").animate({
+                        "opacity": "1"
+                    }, "slow");
+                {% endif %}
+                $("#loading-indicator").hide();
+                $(".post").animate({
+                    "opacity": "1"
+                }, 1000);
+            };
+        },
+        complete: function(data, text_status) {
+            if (items_received < 1) {
+                clog("reload in 10 seconds")
+                countdown();
+                setTimeout("window.location.reload();", 10000);
+            }                
+        },
+        error: function(objRequest) {}
+    });
+};
+
+/* ------------------------------------------------------------------------------------------ */
+
+function getPreviousDrops() {
+    $("#loading-indicator").show();    
+    $('.post').each(function(index) {
+        $(this).remove()
+    });
+    clog("getPreviousDrops:page_num:" + n_vars.page_num);
+    $("#moredrops").hide();
+    $("#lessdrops").hide();
+    n_vars.page_num = n_vars.page_num - 2;
+    document.location = n_vars.docloc + "#p" + (parseInt(n_vars.page_num) + 1);
+    n_vars.drops_next_page = null;
+    loadItems();
+}
+
+/* ------------------------------------------------------------------------------------------ */
+
+function getNextDrops() {
+	$("#loading-indicator").show();    
+    $('.post').each(function(index) {
+        $(this).remove()
+    });
+    $("#moredrops").hide();
+    $("#lessdrops").hide();
+    document.location = n_vars.docloc + "#p" + (parseInt(n_vars.page_num) + 1);
+    scroll(0, 0);
+    loadItems();
+};
+
+
+/* ------------------------------------------------------------------------------------------ */
+
+function sendDrop() {
+    var share = true;
+    if ($("#share_email").val() == "") {
+        $("#share_email").select();
+        return;
+    }
+    var confirmdeletehistory = false;
+    if (share) {
+        var data = {};
+        data["_id"] = $("#share_id_str").val();
+        data["to"] = $("#share_email").val();
+        data["reply"] = $("#email_reply").val();
+        data["body"] = $("#email_body").val();
+        data["previous_emails"] = $("#previous_emails").val();
+        data["cc"] = $('#email_cc').is(':checked');
+        data["email_clear_history"] = "false";
+        if ($('#email_clear_history').is(':checked')) {
+            confirmdeletehistory = confirm("Are you sure you want to delete the mail history?")
+            if (confirmdeletehistory) {
+                data["email_clear_history"] = $('#email_clear_history').is(':checked');
+            }
+        }
+
+        data["email_add_used_addresses"] = $('#email_add_used_addresses').is(':checked');
+        var json_url = "/json/mail/sharedatauser/";
+        clog("shareDrop: " + json_url);
+        $.ajax({
+            type: 'POST',
+            url: json_url,
+            dataType: 'json',
+            data: data,
+            success: function(data, text_status) {
+                clog(data);
+            },
+            complete: function(data, text_status) {
+                clog("succes");
+            },
+            error: function(objRequest) {
+                clog(objRequest);
+            }
+        });
+    };
+
+    if ($("#email_clear_history").is(":checked")) {
+        $("#previous_emails option").each(function(i) {
+            if (confirmdeletehistory) {
+                $(this).remove();
+            }
+        });
+        if (confirmdeletehistory) {
+            $("#previous_emails").append($('<option></option>').val("").html(""));
+        }
+        $('#email_clear_history').attr('checked', false);
+    }
+    if ($("#email_add_used_addresses").is(":checked")) {
+        var alreadyin = false;
+        $("#previous_emails option").each(function(i) {
+            if ($(this).val() == $("#share_email").val()) {
+                alreadyin = true;
+            }
+        });
+        if (!alreadyin) {
+            $("#previous_emails").append($('<option></option>').val($("#share_email").val()).html($("#share_email").val()));
+        }
+        $('#email_add_used_addresses').attr('checked', false);
+    };
+    n_vars.$dialog.dialog('close');
+    return true
+};
+
+/* ------------------------------------------------------------------------------------------ */
+
+function shareDrop(_id, id_str) {
+    $("#previous_emails").val("");
+    $("#email_body").val("");
+    $("#share_email").val("");
+    $("#share_id_str").val(_id);
+    n_vars.$dialog.dialog('open');
+    return;
+}
+
+/* ------------------------------------------------------------------------------------------ */
+
+function n_varsresettingFalse() {
+    clog("n_varsresettingFalse");
+    n_vars.resetting = false;
+};
+
+/* ------------------------------------------------------------------------------------------ */
+
+function openClose(_id, id_str) {
+    clog("openClose: " + id_str);
+    var data = {};
+    data["_id"] = _id
+    data["id_str"] = id_str
+    if ($("#slide_" + id_str).css("display") == "none") {
+        clog("opening");
+        $("#slide_" + id_str).show("blind", {
+            percent: 100
+        }, 500, null);
+        $("#oc_btn_" + id_str).removeClass("btn-open-close");
+        $("#oc_btn_" + id_str).addClass("btn-open");
+        var json_url = "/json/openitem/";
+        $.ajax({
+            type: 'POST',
+            url: json_url,
+            dataType: 'json',
+            data: data,
+            success: function(data, text_status) {
+                for (index in data["peers"]) {
+                    if (data["peers"][index] != id_str) {
+                        $("#slide_" + data["peers"][index]).show("blind", {
+                            percent: 100
+                        }, 500, null);
+                    };
+                    $("#oc_btn_" + data["peers"][index]).removeClass("btn-open-close");
+                    $("#oc_btn_" + data["peers"][index]).addClass("btn-open");
+                }
+            },
+            complete: function(data, text_status) {
+                clog("succes");
+            },
+            error: function(objRequest) {
+                clog(objRequest);
+            }
+        });
+    } else {
+        clog("closing");
+        $("#slide_" + id_str).hide("blind", {
+            percent: 100
+        }, 500, null);
+        $("#oc_btn_" + id_str).removeClass("btn-open");
+        $("#oc_btn_" + id_str).addClass("btn-open-close");
+        var json_url = "/json/closeitem/";
+        $.ajax({
+            type: 'POST',
+            url: json_url,
+            dataType: 'json',
+            data: data,
+            success: function(data, text_status) {
+                for (index in data["peers"]) {
+                    if (data["peers"][index] != id_str) {
+                        $("#slide_" + data["peers"][index]).hide("blind", {
+                            percent: 100
+                        }, 500, null);
+                    };
+                    $("#oc_btn_" + data["peers"][index]).removeClass("btn-open");
+                    $("#oc_btn_" + data["peers"][index]).addClass("btn-open-close");
+                }
+            },
+            complete: function(data, text_status) {
+                clog("succes");
+            },
+            error: function(objRequest) {
+                clog(objRequest);
+            }
+        });
+    }
+}
+
+/* ------------------------------------------------------------------------------------------ */
+
+$(document).ready(function() {
+    $("#newusermessage").hide();
+    $("#loading-indicator").show();
+    $("#moredrops").hide();
+    $("#newdrops").hide();
+    $("#lessdrops").hide();
+    $("#moredrops").hide();
+    setTimeout("eventloop();", 2000);
+    document.title = n_vars.base_title;
+    setTimeout("loadItems()", 100);
+    //$(function() {
+    //	$("img").lazyload({placeholder : "/static/images/grey.gif"});
+    //});
+    jQuery('div.user-area').OpenClose({
+        activeClass: 'open',
+        opener: 'a.user',
+        slider: 'nav',
+        effect: 'slide',
+        animSpeed: 200
+    });
+
+    n_vars.$dialog = $('#shareoverlay').dialog({
+        modal: true,
+        autoOpen: false,
+        title: '',
+        width: 660,
+        resizable: false
+    });
+});
+
+/* ------------------------------------------------------------------------------------------ */
+
+function toEmailField() {
+    $("#share_email").val($("#previous_emails").val());
+}
+
+/* ------------------------------------------------------------------------------------------ */
+
+function showContent(id_str) {
+    $("#nr_readmore_" + id_str).hide();
+    $("#nr_hide_" + id_str).show();
+}
+
+/* ------------------------------------------------------------------------------------------ */
+
+var screenwidth = screen.width;
+if (screenwidth < 768) {
+    document.write('<link rel="stylesheet" href="/static/css/mobile-phone.css" type="text/css" media="screen" />');
+} else {
+    document.write('<link rel="stylesheet" href="/static/css/mobile-tablet.css" type="text/css" media="screen" />');
+}</script>
+<style>
+{% if tuser_profile_use_background_image %}
+    body {
+        background:#{{tuser_profile_background_color}} url({{tuser_profile_background_image_url}}) {%if not tiledbackground %}no-repeat {% endif %}fixed;
+    }
+{% else %}
+    body {
+        background:#{{tuser_profile_background_color}} ;
+    }	
+{% endif %}	
+</style>
+
+</head>
+
+<body>
+	<div class="w1">
+		<div id="wrapper">
+			<h1 class="logo"><a href="javascript:scroll(0,0)">NewsRivr</a></h1>
+			<header id="header">
+				{% if not screen_name %}
+					<div class="tab timeline selected">Timeline</div>
+				{% else %}
+					<div class="tab timeline default"><a href="/">Timeline</a></div>
+				{% endif %}
+				{% ifequal screen_name "mentions" %}
+					<div class="tab mentions selected">@Mentions</div>
+				{% endifequal %}
+				{% ifnotequal screen_name "mentions" %}
+					<div class="tab mentions default"><a href="/mentions">@Mentions</a></div>
+				{% endifnotequal %}
+				<div class="tab favorites default"><a href="/favorites">Favorites</a></div>
+				<div class="user-area">
+					<a href="#" class="user">{{tuser.name}}</a>
+					<nav>
+						<ul>
+							<li><a href="/signout">Sign out</a></li>
+						</ul>
+					</nav>
+				</div>				
+			</header>
+			<section id="main">
+				<div class="main-frame">
+                    {% if screen_name %}
+                        <a href="/">
+                            <section id="moredrops" class="message" >
+                                <div class="frame">
+                                    <div class="content">
+                                        <p>Home</p>
+                                    </div>
+                                </div>
+                            </section>
+                        </a>
+                    {% endif %}                    
+					<a href="javascript:resetDrops()">
+						<section id="newdrops" class="message">
+							<div class="frame">
+								<div class="content">
+									<p><span id='newitems'>0</span> new <span id='newitemsitems'>items</span> available</p>
+								</div>
+							</div>
+						</section>
+					</a>
+					<a href="javascript:getPreviousDrops()">
+						<section id="lessdrops" class="message" >
+							<div class="frame">
+								<div class="content">
+									<p>Back</p>
+								</div>
+							</div>
+						</section>
+					</a>
+					<section class="message-holder">
+						<section id="newusermessage" class="message">
+							<div class="frame">
+								<div class="content">
+									<p>
+										<b>Sorry</b><br />
+										We have no tweets yet, we are monitoring for new tweets directed at you though.<br /><br />reloading in: <span id='secondsdisplay'>10</span> seconds.
+										<br />
+										
+									</p>
+								</div>
+							</div>
+						</section>
+					</section>			                    
+					<div id="newdrops-anchor"></div>
+					<center id="loading-indicator"><img src="/static/images/loading.gif" alt="Loading..." /></center>                    
+					<a href="javascript:getNextDrops()">
+						<section id="moredrops" class="message" >
+							<div class="frame">
+								<div class="content">
+									<p>More</p>
+								</div>
+							</div>
+						</section>
+					</a>
+				</div>
+			</section>
+		</div>
+	</div>
+
+<div class="apple_overlay2" id="shareoverlay" style="display:none;">
+	<form id="shareform" onsubmit="return false;">
+		<input type="hidden" name="share_id_str" id="share_id_str" value="" />
+	   <fieldset> 
+		  <h2 style="font-size: 1.92em;line-height: 0.9em;font-weight:normal;color:#000;margin:0;padding: 0 91px 7px 0;">Share this item</h2> 
+		  <p> 
+			 <label>Select a previously used address</label> 
+			 <select class="form-select" id="previous_emails" onchange="javascript:toEmailField()">
+				<option value=''></option>
+				{%for e in sd.previous_emails %}
+					<option value='{{e}}'>{{e}}</option>
+				{%endfor%}
+			 </select>
+			 <input type="checkbox" id="email_clear_history">Clear history on submit
+		  </p>
+		  <div class="clear"><!-- --></div>
+		  <p> 
+			 <label>To email address<br />
+			 <i>(separate multiple addresses with commas)</i></label>
+			 <input type="text" id="share_email" name="email_friend" value="" required="required" class="form-input-text" />
+			 <input type="checkbox" id="email_add_used_addresses">Add to used addresses
+		  </p>
+		  <div class="clear"><!-- --></div>
+		  <p> 
+			 <label>Your email address<br />
+			 <i>Used for replies (optional)</i></label> 
+			 <input type="email" id="email_reply" name="email_reply" value="{{sd.reply}}" class="form-input-text" />
+			 <input type="checkbox" {% if sd.cc %}checked{% endif %} id="email_cc">Blind copy to myself
+		  </p> 
+		  <div class="clear"><!-- --></div>
+		  <p> 
+			 <label>Optional text message</label> 
+			 <textarea class="form-textarea" id="email_body"></textarea>
+		  </p> 
+		  <div class="clear"><!-- --></div>
+		  <img src="/static/images/submit.png" id="sharesubmitbtn" onclick="javascript:sendDrop()" style="cursor:pointer;display:block;margin-left:auto;margin-right:auto">
+	   </fieldset>  
+	</form>
+</div> 
+</body>
+</html>

@@ -1,0 +1,1301 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title></title>
+	<link media="all" rel="stylesheet" href="/static/css/all.css">
+	<link rel="shortcut icon" href="/static/images/favicon.ico" />
+
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.6.2/jquery.min.js"></script> 
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.15/jquery-ui.min.js"></script>
+
+<!--
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.5.2/jquery.min.js"></script> 
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.11/jquery-ui.min.js"></script>
+-->
+	<!--[if lt IE 9]>		
+	<script src="/static/js/html5.js"></script>
+	<![endif]-->
+	<script type="text/javascript" src="/static/js/mustache.js"></script>
+	<script type="text/javascript" src="/static/js/infinitescroll.js"></script>
+    <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.10/themes/base/jquery-ui.css" type="text/css" media="all" /> 	
+	<style>
+	{% if tuser_profile_use_background_image %}
+		body {
+			background:#{{tuser_profile_background_color}} url({{tuser_profile_background_image_url}}) {%if not tiledbackground %}no-repeat {% endif %}fixed;
+		}
+	{% else %}
+		body {
+			background:#{{tuser_profile_background_color}} ;
+		}	
+	{% endif %}	
+/* override jquery-ui.css */
+.ui-widget { font-family: "ff-milo-web-1","ff-milo-web-2", Helvetica, sans-serif;/*{ffDefault}*/; font-size: 1.1em/*{fsDefault}*/; }
+.ui-widget input, .ui-widget select, .ui-widget textarea, .ui-widget button { font-family: "ff-milo-web-1","ff-milo-web-2", Helvetica, sans-serif;/*{ffDefault}*/; font-size: 1em; }
+.ui-widget-overlay { background: #000 url(/static/images/bg-overlay.png); opacity: .8;filter:Alpha(Opacity=80); }
+</style>
+
+<script type="text/javascript" src="http://use.typekit.com/nsy7xbx.js"></script>
+<script type="text/javascript">try{Typekit.load();}catch(e){}</script>
+	
+<script type = "text/javascript" >
+/* ------------------------------------------------------------------------------------------ */
+
+var n_vars = {
+	self: this,
+	page_num: 0,
+	has_next_page: false,
+	first_page: null,
+	first_page_has_next: false,
+	resetting: false,
+	base_title: "{{title}}",
+	scrolltop: 0,
+	scrolling: false,
+	scrollmaxreached: false,
+	total_for_user: 0,
+	loading: false,
+	newdropsvisible: false,
+	eventlooprunning: false,
+	get_available_drops: null,
+	loadcheck: null,
+	scrollcheck: null,
+	drop_id_in_html: new Array(),
+	$dialog: null,
+	screen_name: "{{screen_name}}",
+	charcountstart:0,
+    ie8:{%if ie8%}true{%else%}false{%endif%},
+    autoreload:true,
+    getting_available_drops:false,
+	last_added_at_precise:0,
+    first_page_last_added_at_precise:0,
+	ulist:"{{ulist}}"
+};
+
+/* ------------------------------------------------------------------------------------------ */
+
+function clog(s) {
+	if ((navigator.userAgent).indexOf("Firefox") == -1) {
+		if ((navigator.userAgent).indexOf("MSIE") == -1) {
+			console.log(new Date() + " " + s);
+		} else {
+			if (typeof console == "object") {
+				console.log(s);
+			}
+		}
+	}
+}
+
+/* ------------------------------------------------------------------------------------------ */
+
+function resetDrops() {
+	if (n_vars.resetting == true) {
+		return;
+	}
+	n_vars.resetting = true;
+	n_vars.loading = true;
+    if (n_vars.autoreload==false) {
+        $("#loading-indicator-top").show();    
+    	$("#loading-indicator").show();        
+    };
+	$("#newdrops").hide();
+	var json_url = "/json/resetcookietimestamp/";
+	$.ajax({
+		url: json_url,
+		dataType: 'json',
+		timeout: 15000,
+		cache: false,
+		success: function(data, text_status) {
+			$('.post').each(function(index) {
+				$(this).remove()
+			});
+			n_vars.page_num = 1;
+            var html = getHtmlDrops(n_vars.first_page);
+            if (n_vars.ie8) {
+                document.getElementById("newdrops-anchor"+n_vars.page_num).innerHTML = html;
+            }
+            else {
+                $("#newdrops-anchor").before(html);
+            }
+			document.title = n_vars.base_title;
+            n_vars.last_added_at_precise = n_vars.first_page_last_added_at_precise;
+			n_vars.loadcheck = new Date().getTime();
+			n_vars.scrollcheck = new Date().getTime();
+			n_vars.scrollmaxreached = false;
+			n_vars.loading = false;
+			$("#loading-indicator").hide();
+			drop_id_in_html = new Array();
+			var cnt = 0;
+			$('.post').each(function(index) {
+				drop_id_in_html[cnt] = $(this).attr("id");
+				cnt += 1
+			});
+			for (i = 0; i < drop_id_in_html.length; i++) {
+				var animate = true;
+				for (j = 0; j < n_vars.drop_id_in_html.length; j++) {
+					if (drop_id_in_html[i] == n_vars.drop_id_in_html[j]) {
+						animate = false;
+					}
+				}
+				if (animate == true) {
+					$("#" + drop_id_in_html[i]).hide()                    
+                    if (n_vars.autoreload){
+                        $("#" + drop_id_in_html[i]).show();
+                        if (n_vars.ie8){
+                            $("#" + drop_id_in_html[i]).show();
+                        }
+                    }
+                    else {
+                        $("#" + drop_id_in_html[i]).show("slide", {direction: "up"}, 500, null);
+                    }
+				} 
+			}
+			n_vars.drop_id_in_html = new Array();
+			for (i = 0; i < drop_id_in_html.length; i++) {
+				n_vars.drop_id_in_html[i] = drop_id_in_html[i];
+			}
+			$(".frame").hover(
+
+			function() {
+				if ((navigator.userAgent).indexOf("MSIE") > 0) {
+					$(this).children(".iconset").show();
+				} else {
+					$(this).children(".iconset").stop().animate({
+						"opacity": "1"
+					}, "slow");
+				}
+			}, function() {
+				if ((navigator.userAgent).indexOf("MSIE") > 0) {
+					$(this).children(".iconset").hide();
+				} else {
+					$(this).children(".iconset").stop().animate({
+						"opacity": "0"
+					}, "slow");
+				}
+			});
+
+			if ((navigator.userAgent).indexOf("MSIE") > 0) {
+				$('.iconset').each(function(index) {
+					$(this).hide();
+				});
+			} else {
+				$('.iconset').each(function(index) {
+					$(this).css("opacity", 0);
+				});
+			}
+			$("#loading-indicator-top").hide();
+            if (n_vars.autoreload) {
+                n_vars.resetting = false;
+            }
+            else {
+                setTimeout("n_vars.resetting = false;", 5000);
+            };
+            n_vars.autoreload = true;
+		},
+		complete: function(data, text_status) {
+			n_vars.newdropsvisible = false;
+		},
+		error: function(objRequest) {
+			n_vars.resetting = false;
+		}
+	});
+};
+
+/* ------------------------------------------------------------------------------------------ */
+
+function getAvailableDrops() {
+    n_vars.getting_available_drops = true;
+	var json_url = "/json/newdropscount/" + n_vars.screen_name  + "/" + n_vars.ulist
+	$.ajax({
+		url: json_url,
+		dataType: 'json',
+		timeout: 15000,
+		cache: false,
+		success: function(data, text_status) {
+			len = parseInt(data["cnt"]);
+			if (len > 0) {
+				n_vars.first_page = data;
+				n_vars.first_page_last_added_at_precise = data.last_added_at_precise;
+				n_vars.first_page_has_next = data["has_next"];
+				if (len == 1) {
+					$("#newitemsitems").text("item");
+				} else {
+					$("#newitemsitems").text("items");
+				}
+				/*
+				if (len > 10) {
+					len = "10+"
+				}
+				*/
+                if (n_vars.autoreload) {
+                    resetDrops();
+                }                
+				else
+                {
+                    if (n_vars.resetting == false) {
+                        var new_title = "(" + len + ") " + n_vars.base_title;
+                        document.title = new_title;
+                        if (n_vars.newdropsvisible == false) {
+                            if (n_vars.ie8){
+                                $("#newdrops").show();
+                            }
+                            $("#newdrops").show("blind", {
+                                percent: 100
+                            }, 1000, null);
+                            n_vars.newdropsvisible = true;
+                        };
+                    };
+				}
+			} else {
+				$("#newdrops").hide();
+				n_vars.newdropsvisible = false;
+				document.title = n_vars.base_title;
+			}
+			jQuery("#newitems").text(len);
+            n_vars.getting_available_drops = false;
+		},
+		complete: function(data, text_status) {
+            n_vars.getting_available_drops = false;
+        },
+		error: function(objRequest) {
+			clog("getAvailableDrops error!!")
+            n_vars.getting_available_drops = false;
+        }
+	});
+};
+
+/* ------------------------------------------------------------------------------------------ */
+
+function eventloop() {
+
+    var timeout = "10000";
+    if ("Scobleizer"=="{{tuser.screen_name}}") {
+        timeout = "1000";
+        if (n_vars.autoreload==false) {
+            timeout = "1000";
+        }
+    }
+    if ((new Date().getTime() - n_vars.get_available_drops) > parseInt(timeout)) {
+        if (n_vars.resetting == false) {
+            if (n_vars.getting_available_drops == false) {
+                getAvailableDrops();
+            }
+        }
+        else {
+            //clog("still resetting")
+        }
+        n_vars.get_available_drops = new Date().getTime();
+    };
+
+	if ((new Date().getTime() - n_vars.loadcheck) > 500) {
+		if (n_vars.scrollmaxreached == true && !n_vars.scrolling) {
+			n_vars.scrollmaxreached = false;
+			if (!n_vars.loading) {
+				clog("eventloop: initiating loaditems");
+				loadItems();
+			};
+		};
+		n_vars.scrolling = false;
+		n_vars.loadcheck = new Date().getTime();
+	};
+	if ((new Date().getTime() - n_vars.scrollcheck) > 250) {
+		if (n_vars.scrolling) {
+			n_vars.scrolling = false;
+		};
+		if ($(window).scrollTop() > $(document).height() - ($(window).height() * 3) && n_vars.has_next_page) {
+			n_vars.scrollmaxreached = true;
+		};
+		if (n_vars.has_next_page == true) {
+			$("#loading-indicator").show();
+		};
+		n_vars.scrollcheck = new Date().getTime();
+	};
+    if ($(window).scrollTop()==0) {
+        //n_vars.autoreload = true;
+    }
+    else {
+        n_vars.autoreload = false;
+    }    
+	setTimeout("eventloop();", 250);
+};
+
+/* ------------------------------------------------------------------------------------------ */
+
+//scrolling:false,
+//scrollmaxreached:false
+var loadOnScroll = function() {
+	var st = $(window).scrollTop();
+	if ((st - n_vars.scrolltop) < $(window).height() * 3) {
+		n_vars.scrolltop = st;
+	} else {
+		$(window).unbind();
+		scroll(0, n_vars.scrolltop);
+		$(window).bind('scroll', loadOnScroll);
+	}
+	n_vars.scrolling = true;
+};
+
+/* ------------------------------------------------------------------------------------------ */
+
+// open-close plugin
+jQuery.fn.OpenClose = function(_options) {
+	// default options
+	var _options = jQuery.extend({
+		activeClass: 'active',
+		opener: '.opener',
+		slider: '.slide',
+		animSpeed: 400,
+		animStart: false,
+		animEnd: false,
+		effect: 'fade',
+		event: 'click'
+	}, _options);
+
+	return this.each(function() {
+		// options
+		var _holder = jQuery(this);
+		var _slideSpeed = _options.animSpeed;
+		var _activeClass = _options.activeClass;
+		var _opener = jQuery(_options.opener, _holder);
+		var _slider = jQuery(_options.slider, _holder);
+		var _animStart = _options.animStart;
+		var _animEnd = _options.animEnd;
+		var _effect = _options.effect;
+		var _event = _options.event;
+		if (_slider.length) {
+			_opener.bind(_event, function() {
+				if (!_slider.is(':animated')) {
+					if (typeof _animStart === 'function') _animStart();
+					if (_holder.hasClass(_activeClass)) {
+						_slider[_effect == 'fade' ? 'fadeOut' : 'slideUp'](_slideSpeed, function() {
+							if (typeof _animEnd === 'function') _animEnd();
+						});
+						_holder.removeClass(_activeClass);
+					} else {
+						_holder.addClass(_activeClass);
+						_slider[_effect == 'fade' ? 'fadeIn' : 'slideDown'](_slideSpeed, function() {
+							if (typeof _animEnd === 'function') _animEnd();
+						});
+					}
+				}
+				return false;
+			});
+			if (_holder.hasClass(_activeClass)) _slider.show();
+			else _slider.hide();
+		}
+	});
+}
+
+/* ------------------------------------------------------------------------------------------ */
+
+var seconds = 60;
+
+function countdown() {
+	$("#secondsdisplay").text(seconds);
+	seconds = seconds - 1
+	if (seconds < 0) {
+		seconds = 0;
+	};
+	setTimeout("countdown()", 1000);
+}
+
+function loadItems() {
+
+	if (n_vars.loading) {
+		clog("still loading return;");
+		return;
+	}
+	if (n_vars.screen_name == "") {
+		n_vars.screen_name = "None";
+	}
+	n_vars.loading = true;
+	var items_received = 0;
+	var json_url = "/json/" + (n_vars.page_num + 1) + '/' + n_vars.screen_name + "/" + n_vars.last_added_at_precise + "/" + n_vars.ulist ;
+	clog("LoadItems: " + json_url);
+	$.ajax({
+		url: json_url,
+		dataType: 'json',
+		timeout: 60000,
+		cache: false,
+		success: function(data, text_status) {
+			if (data.has_next) {
+				n_vars.page_num = n_vars.page_num + 1;
+			}
+			n_vars.total_for_user = data.total_for_user;
+			n_vars.has_next_page = data.has_next;
+			n_vars.last_added_at_precise = data.last_added_at_precise;
+			var html = "";
+			clog("last_added_at_precise received: "+data.last_added_at_precise);
+			clog("items_received: "+data.total_for_user);
+			items_received = parseInt(data.total_for_user);
+			if (items_received == 0) {
+				$("#newusermessage").show("blind", {
+					percent: 100
+				}, 500, null);
+			} else {
+				$("#newusermessage").hide();
+				$("#profilesection").show();
+				for (i = 0; i < n_vars.drop_id_in_html.length; i++) {
+					for (j = 0; j < data.length; j++) {
+						if (n_vars.drop_id_in_html[i] == data[j]["id_str"]) {
+							data.slice(j, j);
+							clog("slicing since we found doubles")
+						}
+					}
+				}
+				html = getHtmlDrops(data);
+				//
+				if (n_vars.ie8) {
+				    document.getElementById("newdrops-anchor"+n_vars.page_num).innerHTML = html;//document.getElementById("newdrops-anchor").innerHTML + html;
+				}
+				else {
+					$("#newdrops-anchor").before(html);
+				}
+				$(window).bind('scroll', loadOnScroll);
+				n_vars.loadcheck = new Date().getTime();
+				n_vars.scrollcheck = new Date().getTime();
+				n_vars.scrollmaxreached = false;
+				n_vars.loading = false;
+				if (!n_vars.eventlooprunning) {
+					n_vars.get_available_drops = new Date().getTime();
+					n_vars.loadcheck = new Date().getTime();
+					n_vars.scrollcheck = new Date().getTime();
+					eventloop();
+					n_vars.eventlooprunning = true;
+				}
+			};
+
+			var cnt = 0;
+			$('.post').each(function(index) {
+				n_vars.drop_id_in_html[cnt] = $(this).attr("id");
+				cnt += 1
+			});
+
+			$("#loading-indicator").hide();
+			$(".frame").hover(
+
+			function() {
+				if ((navigator.userAgent).indexOf("MSIE") > 0) {
+					$(this).children(".iconset").show();
+				} else {
+					$(this).children(".iconset").stop().animate({
+						"opacity": "1"
+					}, "slow");
+				}
+			}, function() {
+				if ((navigator.userAgent).indexOf("MSIE") > 0) {
+					$(this).children(".iconset").hide();
+				} else {
+					$(this).children(".iconset").stop().animate({
+						"opacity": "0"
+					}, "slow");
+				}
+			});
+
+			if ((navigator.userAgent).indexOf("MSIE") > 0) {
+				$('.iconset').each(function(index) {
+					$(this).hide();
+				});
+			} else {
+				$('.iconset').each(function(index) {
+					$(this).css("opacity", 0);
+				});
+			}
+			if (items_received < 1) {
+                clog("reload in 60 seconds")
+                seconds = 60;
+                setTimeout("document.location = '/';", 60000);
+				countdown();
+			};
+			clog("done loading");
+		},
+		complete: function(data, text_status) {
+
+		},
+		error: function(objRequest) {}
+	});
+};
+
+/* ------------------------------------------------------------------------------------------ */
+
+function sendDrop() {
+	var share = true;
+	if ($("#share_email").val() == "") {
+		$("#share_email").select();
+		return;
+	}
+	var confirmdeletehistory = false;
+	if (share) {
+		var data = {};
+		data["_id"] = $("#share_id_str").val();
+		data["to"] = $("#share_email").val();
+		data["reply"] = $("#email_reply").val();
+		data["body"] = $("#email_body").val();
+		data["previous_emails"] = $("#previous_emails").val();
+		data["cc"] = $('#email_cc').is(':checked');
+		data["email_clear_history"] = "false";
+		if ($('#email_clear_history').is(':checked')) {
+			confirmdeletehistory = confirm("Are you sure you want to delete the mail history?")
+			if (confirmdeletehistory) {
+				data["email_clear_history"] = $('#email_clear_history').is(':checked');
+			}
+		}
+
+		data["email_add_used_addresses"] = $('#email_add_used_addresses').is(':checked');
+		var json_url = "/json/mail/sharedatauser/";
+		clog("shareDrop: " + json_url);
+		$.ajax({
+			type: 'POST',
+			url: json_url,
+			timeout: 15000,
+			dataType: 'json',
+			cache: false,
+			data: data,
+			success: function(data, text_status) {
+				$("#notification_items_sent").show("slide", {
+					direction: "up"
+				}, 500, null);
+				setTimeout('$("#notification_items_sent").hide("slide", { direction: "up" }, 500, null);', 4000);
+			},
+			complete: function(data, text_status) {},
+			error: function(objRequest) {
+				clog(objRequest);
+			}
+		});
+	};
+
+	if ($("#email_clear_history").is(":checked")) {
+		$("#previous_emails option").each(function(i) {
+			if (confirmdeletehistory) {
+				$(this).remove();
+			}
+		});
+		if (confirmdeletehistory) {
+			$("#previous_emails").append($('<option></option>').val("").html(""));
+		}
+		$('#email_clear_history').attr('checked', false);
+	}
+	if ($("#email_add_used_addresses").is(":checked")) {
+		var alreadyin = false;
+		$("#previous_emails option").each(function(i) {
+			if ($(this).val() == $("#share_email").val()) {
+				alreadyin = true;
+			}
+		});
+		if (!alreadyin) {
+			$("#previous_emails").append($('<option></option>').val($("#share_email").val()).html($("#share_email").val()));
+		}
+		$('#email_add_used_addresses').attr('checked', false);
+	};
+	n_vars.$dialog.dialog('close');
+	return true
+};
+
+/* ------------------------------------------------------------------------------------------ */
+
+function shareDrop(_id, id_str) {
+	$("#previous_emails").val("");
+	$("#email_body").val("");
+	$("#share_email").val("");
+	$("#share_id_str").val(_id);
+	n_vars.$dialog.dialog('open');
+	return;
+}
+
+/* ------------------------------------------------------------------------------------------ */
+
+function favoriteDrop(post_id, id_str) {
+	var data = {};
+	data["id_str"] = id_str;
+	if (document.getElementById("btn-favorite-" + post_id).className == "btn-favorite-off") {
+		$("#btn-favorite-" + post_id).addClass("btn-favorite-on");
+		$("#btn-favorite-" + post_id).removeClass("btn-favorite-off");
+		$("#btn-favorite-" + post_id).attr("title", "Unmark as favorite");
+		data["action"] = "create";
+		$("#notification_item_saved").text("The tweet has been saved to your favorites");
+	} else {
+		if (n_vars.screen_name == "favorites") {
+			if (n_vars.ie8) {
+				$("#" + post_id).hide();
+			}
+			else {
+				$("#" + post_id).fadeOut("slow");
+			}
+		}
+		$("#btn-favorite-" + post_id).addClass("btn-favorite-off");
+		$("#btn-favorite-" + post_id).removeClass("btn-favorite-on");
+		$("#btn-favorite-" + post_id).attr("title", "Mark as favorite");
+		data["action"] = "destroy";
+		$("#notification_item_saved").text("The tweet has been removed from your favorites");
+	}
+	$.ajax({
+		type: "POST",
+		url: "/json/favorite/action",
+		dataType: "json",
+		timeout: 15000,
+		cache: false,
+		data: data,
+		success: function(data, text_status) {
+			if (n_vars.screen_name != "favorites") {
+				$("#notification_item_saved").show("slide", {
+					direction: "up"
+				}, 500, null);
+				setTimeout('$("#notification_item_saved").hide("slide", { direction: "up" }, 500, null);', 2500);
+			};
+		},
+		complete: function(data, text_status) {},
+		error: function(objRequest) {
+			console.log(objRequest);
+		}
+	});
+}
+
+/* ------------------------------------------------------------------------------------------ */
+
+function reTweet(post_id, id_str) {
+	var data = {};
+	data["id_str"] = id_str;
+	if (document.getElementById("btn-retweet-" + post_id).className == "btn-retweet-off") {
+		$("#btn-retweet-" + post_id).addClass("btn-retweet-on");
+		$("#btn-retweet-" + post_id).removeClass("btn-retweet-off");
+		$("#btn-retweet-" + post_id).attr("title", "Undo retweet");
+		data["action"] = "create";
+		$("#notification_item_retweeted").text("The tweet has been retweeted to your followers");
+	} else {
+		$("#btn-retweet-" + post_id).addClass("btn-retweet-off");
+		$("#btn-retweet-" + post_id).removeClass("btn-retweet-on");
+		$("#btn-retweet-" + post_id).attr("title", "Retweet");
+		data["action"] = "destroy";
+		$("#notification_item_retweeted").text("The retweet has been undone");
+	}
+	$.ajax({
+		type: "POST",
+		url: "/json/retweet",
+		timeout: 15000,
+		dataType: "json",
+		cache: false,
+		data: data,
+		success: function(data, text_status) {
+			$("#notification_item_retweeted").show("slide", {
+				direction: "up"
+			}, 1000, null);
+			setTimeout('$("#notification_item_retweeted").hide("slide", { direction: "up" }, 1000, null);', 4000);
+		},
+		complete: function(data, text_status) {},
+		error: function(objRequest) {
+			console.log(objRequest);
+		}
+	});
+}
+
+/* ------------------------------------------------------------------------------------------ */
+
+function reTweetDialog(post_id, id_str) {
+	var data = {};
+	data["id_str"] = id_str;
+	$.ajax({
+		type: "POST",
+		url: "/json/tweetdata",
+		dataType: "json",
+		timeout: 15000,
+		cache: false,
+		data: data,
+		success: function(data, text_status) {
+			$("#retweet_dialog").html(" \
+			 <div class=\"bar\"> \
+				<div class=\"block-tweeter\"> \
+					<div class=\"ava\"> \
+						<img src='" + data["profile_image_url"] + "' alt=\"\"> \
+					</div> \
+					<div class=\"holder\"> \
+						<strong class=\"name\">" + data["name"] + "</strong> \
+					</div> \
+				</div> \
+			</div> \
+			<div class=\"heading\"> \
+			    <h2>" + data["org_content"] + "</h2> \
+			</div> \
+			");
+			if (document.getElementById("btn-retweet-" + post_id).className == "btn-retweet-on") {
+				$("#retweet_dialog").attr("title", "Undo this retweet?");
+				$("#retweet_dialog").dialog({
+					resizable: false,
+					width: 400,
+					height: 220,
+					modal: true,
+					buttons: {
+						"Undo retweet": function() {
+							$(this).dialog("close");
+							reTweet(post_id, id_str);
+						},
+						Cancel: function() {
+							$(this).dialog("close");
+						}
+					}
+				});
+			} else {
+				$("#retweet_dialog").dialog({
+					resizable: false,
+					width: 400,
+					height: 250,
+					modal: true,
+					buttons: {
+						Retweet: function() {
+							$(this).dialog("close");
+							reTweet(post_id, id_str);
+						},
+						Cancel: function() {
+							$(this).dialog("close");
+						}
+					}
+				});
+			}
+		},
+		complete: function(data, text_status) {},
+		error: function(objRequest) {
+			console.log(objRequest);
+		}
+	});
+}
+
+/* ------------------------------------------------------------------------------------------ */
+
+function newTweet() {
+	
+	n_vars.charcountstart = 140;
+	$("#tweet_dialog").html(" \
+		<textarea cols='40' rows='4' id='tweet_text' maxlength='140' onfocus='this.value = this.value;' onkeyup='countChars(); return ismaxlength(this)'></textarea><br/> \
+		<span id='charcount_reply'>"+n_vars.charcountstart+"</span><br/> \
+		   ");
+	$("#tweet_dialog").dialog({
+		resizable: false,
+		width: 450,
+		height: 240,
+		modal: true,
+		buttons: {
+			"Tweet": function() {
+				$(this).dialog("close");
+				var data = {}				
+				data["text"] = document.getElementById("tweet_text").value;
+				$.ajax({
+					type: "POST",
+					url: "/json/tweet",
+					timeout: 15000,
+					dataType: "json",
+					cache: false,
+					data: data,
+					success: function(data, text_status) {
+						$("#notification_item_tweeted").show("slide", {
+							direction: "up"
+						}, 1000, null);
+						setTimeout('$("#notification_item_tweeted").hide("slide", { direction: "up" }, 1000, null);', 4000);
+					},
+					complete: function(data, text_status) {},
+					error: function(objRequest) {
+						console.log(objRequest);
+					}
+				});				
+			},
+			Cancel: function() {
+				$(this).dialog("close");
+			}
+		}
+			});
+}
+
+/* ------------------------------------------------------------------------------------------ */
+
+function setCaretPosition(ctrl, pos) {
+	if (ctrl.setSelectionRange) {
+		ctrl.focus();
+		ctrl.setSelectionRange(pos, pos);
+	} else if (ctrl.createTextRange) {
+		var range = ctrl.createTextRange();
+		range.collapse(true);
+		range.moveEnd('character', pos);
+		range.moveStart('character', pos);
+		range.select();
+	}
+}
+
+/* ------------------------------------------------------------------------------------------ */
+
+function ismaxlength(obj) {
+	var mlength = obj.getAttribute ? parseInt(obj.getAttribute("maxlength")) : ""
+	if (obj.getAttribute && obj.value.length > mlength) obj.value = obj.value.substring(0, mlength)
+}
+
+function countChars() {	
+	n_vars.charcountstart = n_vars.charcountstart - 1;
+	if (n_vars.charcountstart<0) {
+		n_vars.charcountstart = 0;
+	}
+	$("#charcount_reply").text(n_vars.charcountstart);
+}
+
+/* ------------------------------------------------------------------------------------------ */
+
+function tweetReply(text, id_str) {
+	var data = {};
+	data["id_str"] = id_str;
+	data["text"] = text;
+	$.ajax({
+		type: "POST",
+		url: "/json/tweetReply",
+		timeout: 15000,
+		dataType: "json",
+		cache: false,
+		data: data,
+		success: function(data, text_status) {
+			$("#notification_item_reply").show("slide", {
+				direction: "up"
+			}, 1000, null);
+			setTimeout('$("#notification_item_reply").hide("slide", { direction: "up" }, 1000, null);', 4000);			
+		},
+		complete: function(data, text_status) {},
+		error: function(objRequest) {
+			console.log(objRequest);
+		}
+	});
+}
+
+function replyDrop(post_id, id_str) {
+	var data = {};
+	data["id_str"] = id_str;
+	$.ajax({
+		type: "POST",
+		url: "/json/tweetdata",
+		timeout: 15000,
+		dataType: "json",
+		cache: false,
+		data: data,
+		success: function(data, text_status) {
+			n_vars.charcountstart = 140-data["screen_name"].length;
+			$("#retweet_dialog").attr("title", "Reply to " + data["screen_name"]);
+			$("#retweet_dialog").html(" \
+				<textarea cols='40' rows='4' id='reply_tweet_text' maxlength='140' onfocus='this.value = this.value;' onkeyup='countChars(); return ismaxlength(this)'>@" + data["screen_name"] + "&nbsp;</textarea><br/> \
+				<span id='charcount_reply'>"+n_vars.charcountstart+"</span><br/> \
+				<hr/> \
+				<br/> \
+				<div class=\"bar\"> \
+				       <div class=\"block-tweeter\"> \
+					       <div class=\"ava\"> \
+						       <img src='" + data["profile_image_url"] + "' alt=\"\"> \
+					       </div> \
+					       <div class=\"holder\"> \
+						       <strong class=\"name\">" + data["name"] + "</strong> \
+					       </div> \
+				       </div> \
+			       </div> \
+			       <div class=\"heading\"> \
+				   <h2>" + data["org_content"] + "</h2> \
+			       </div> \
+			       ");
+			$("#retweet_dialog").dialog({
+				resizable: false,
+				width: 450,
+				height: 400,
+				modal: true,
+				buttons: {
+					"Tweet": function() {
+						$(this).dialog("close");
+						tweetReply(document.getElementById("reply_tweet_text").value, id_str);
+					},
+					Cancel: function() {
+						$(this).dialog("close");
+					}
+				}
+			});
+		},
+		complete: function(data, text_status) {},
+		error: function(objRequest) {
+			console.log(objRequest);
+		}
+	});
+}
+/* ------------------------------------------------------------------------------------------ */
+
+function openClose(_id, id_str) {
+	clog("openClose: " + id_str);
+	var data = {};
+	data["_id"] = _id
+	data["id_str"] = id_str
+	if ($("#slide_" + id_str).css("display") == "none") {
+		clog("opening");
+		$("#slide_" + id_str).show("blind", {
+			percent: 100
+		}, 500, null);
+		$("#oc_btn_" + id_str).removeClass("btn-open-close");
+		$("#oc_btn_" + id_str).addClass("btn-open");
+		$("#oc_btn_" + id_str).attr("title", "Close all from this user");
+		var json_url = "/json/openitem/";
+		$.ajax({
+			type: 'POST',
+			url: json_url,
+			timeout: 15000,
+			cache: false,
+			dataType: 'json',
+			data: data,
+			success: function(data, text_status) {
+				var start_moving = false;
+				for (index in data["peers"]) {
+					if (data["peers"][index] == id_str) {
+						start_moving = true;
+					}
+					if (data["peers"][index] != id_str) {
+						if (start_moving) {
+							$("#slide_" + data["peers"][index]).show("blind", {
+								percent: 100
+							}, 500, null);
+						};
+					};
+					if (start_moving) {
+						$("#oc_btn_" + data["peers"][index]).removeClass("btn-open-close");
+						$("#oc_btn_" + data["peers"][index]).addClass("btn-open");
+					}
+				}
+			},
+			complete: function(data, text_status) {
+
+			},
+			error: function(objRequest) {
+				clog(objRequest);
+			}
+		});
+	} else {
+		clog("closing");
+		$("#slide_" + id_str).hide("blind", {
+			percent: 100
+		}, 500, null);
+		$("#oc_btn_" + id_str).removeClass("btn-open");
+		$("#oc_btn_" + id_str).addClass("btn-open-close");
+		$("#oc_btn_" + id_str).attr("title", "Open all from this user");
+		var json_url = "/json/closeitem/";
+		$.ajax({
+			type: 'POST',
+			url: json_url,
+			timeout: 15000,
+			cache: false,
+			dataType: 'json',
+			data: data,
+			success: function(data, text_status) {
+				var start_moving = false;
+				for (index in data["peers"]) {
+					if (data["peers"][index] == id_str) {
+						start_moving = true;
+					}
+					if (data["peers"][index] != id_str) {
+						if (start_moving == true) {
+							$("#slide_" + data["peers"][index]).hide("blind", {
+								percent: 100
+							}, 500, null);
+						};
+					};
+					if (start_moving == true) {
+						$("#oc_btn_" + data["peers"][index]).removeClass("btn-open");
+						$("#oc_btn_" + data["peers"][index]).addClass("btn-open-close");
+					}
+				}
+			},
+			complete: function(data, text_status) {
+
+			},
+			error: function(objRequest) {
+				clog(objRequest);
+			}
+		});
+	}
+}
+
+/* ------------------------------------------------------------------------------------------ */
+
+$(document).ready(function() {
+	$("#profilesection").hide();
+	$("#notification_items_sent").hide();
+	$("#notification_item_saved").hide();
+	$("#newusermessage").hide();
+	clog("document.ready");
+	document.title = n_vars.base_title;
+	if (n_vars.screen_name=="lists") {
+		$("#loading-indicator").hide();
+	}
+	else {
+		loadItems();
+	}
+	$(window).bind('scroll', loadOnScroll);
+	$("#newdrops").hide();
+	jQuery('div.user-area').OpenClose({
+		activeClass: 'open',
+		opener: 'a.user',
+		slider: 'nav',
+		effect: 'slide',
+		animSpeed: 200
+	});
+	n_vars.$dialog = $('#shareoverlay').dialog({
+		modal: true,
+		autoOpen: false,
+		title: '',
+		width: 660,
+		resizable: false
+	});
+});
+
+/* ------------------------------------------------------------------------------------------ */
+
+function toEmailField() {
+	$("#share_email").val($("#previous_emails").val());
+}
+
+/* ------------------------------------------------------------------------------------------ */
+
+function showContent(id_str) {
+	$("#nr_readmore_" + id_str).hide("blind", {
+		percent: 100
+	}, 500, null);
+	$("#nr_hide_" + id_str).show("blind", {
+		percent: 100
+	}, 500, null);
+	n_vars.autoreload = false;	
+}
+
+/* ------------------------------------------------------------------------------------------ */
+
+</script>
+
+</head>
+<body>
+	<div class="notification" id="notification_items_sent" style="display:none;">The tweet you wanted to share has been sent</div>
+	<div class="notification" id="notification_item_saved" style="display:none;">The tweet has been saved to your favorites</div>
+	<div class="notification" id="notification_item_retweeted" style="display:none;">The tweet has been retweeted to your followers</div>
+	<div class="notification" id="notification_item_tweeted" style="display:none;">The tweet has been sent to your followers</div>
+	<div class="notification" id="notification_item_reply" style="display:none;">Your reply has been sent</div>
+	<div class="w1">					
+		<div id="wrapper">
+			<h1 class="logo"><a href="javascript:scroll(0,0)">NewsRivr</a></h1>
+			<header id="header">
+				{% if not screen_name %}
+					<div class="tab timeline selected">Timeline</div>
+				{% else %}
+					<div class="tab timeline default"><a href="/">Timeline</a></div>
+				{% endif %}
+				{% ifequal screen_name "mentions" %}
+					<div class="tab mentions selected">@Mentions</div>
+				{% endifequal %}
+				{% ifnotequal screen_name "mentions" %}
+					<div class="tab mentions default"><a href="/mentions">@Mentions</a></div>
+				{% endifnotequal %}
+                {% ifequal screen_name "favorites" %}
+                    <div class="tab favorites selected">Favorites</div>
+				{% endifequal %}
+				{% ifnotequal screen_name "favorites" %}
+					<div class="tab favorites default"><a href="/favorites">Favorites</a></div>
+				{% endifnotequal %}
+                {% ifequal screen_name "lists" %}
+					<div class="tab lists selected"><a href="/lists">Lists</a></div>
+				{% endifequal %}
+				{% ifnotequal screen_name "lists" %}
+					<div class="tab lists default"><a href="/lists">Lists</a></div>
+				{% endifnotequal %}
+				
+								                  
+				<div class="user-area">
+					<a href="#" class="user">{{tuser.name}}</a>
+					<nav>
+						<ul>
+							<li><a href="javascript:newTweet()">New tweet</a></li>
+                            <li><a href="/about">About</a></li>
+							<li><a href="/signout">Sign out</a></li>
+						</ul>
+					</nav>
+				</div>				
+			</header>
+			<section id="main">
+				<div class="main-frame">
+					<section class="message-holder">
+						<section id="loading-indicator-top" class="message" style="display:none;">				
+							<div class="frame">
+								<div class="content">
+									<p>Loading...</p>
+								</div>
+							</div>
+						</section>
+					</section>										
+					<section class="message-holder">
+						<section id="newdrops" class="message" style="display:none;">
+							<a href="javascript:resetDrops()" id='resetlink'>							
+								<div class="frame">
+									<div class="content">
+										<p><span id='newitems'>0</span> new <span id='newitemsitems'>items</span> available</p>
+									</div>
+								</div>
+							</a>							
+						</section>
+					</section>
+					{% ifequal screen_name "lists" %}
+					{% if ulists %}
+						{% for l in ulists %}
+							<section class="profilesection" id="listnamesection">
+								<header>
+									<div class="frame">
+										<div class="bar">
+											<div class="block-tweeter-big">
+												<div class="holder">
+													<strong class="name"><h2><a href='/list/{{l.slug}}'>{{l.name}}</a></h2></strong>
+												</div>
+											</div>
+										</div>
+									</div>
+								</header>
+							</section>						
+						{% endfor %}			
+					{% else %}
+						No lists available, if you want you can create some at: <a href="http://twitter.com/lists" target="_blank">http://twitter.com/lists</a>
+					{% endif %}
+					{% endifequal %}
+
+					{% ifequal screen_name "list" %}
+						<section class="profilesection" id="listnamesection">
+							<header>
+								<div class="frame">
+									<div class="bar">
+										<div class="block-tweeter-big">
+											<div class="holder">
+												<strong class="name"><h2>List:&nbsp;{{ulist_full_name}}</h2></strong>
+											</div>
+										</div>
+									</div>
+								</div>
+							</header>
+						</section>
+					{% endifequal %}
+
+                    {% if screen_name %}
+                    {% ifnotequal screen_name "mentions" %}
+                    {% ifnotequal screen_name "favorites" %}
+					{% ifnotequal screen_name "lists" %}
+					{% ifnotequal screen_name "list" %}
+					<section class="profilesection" id="profilesection">
+						<header>
+							<div class="frame">
+								<div class="bar">
+									<div class="block-tweeter-big">
+										<div class="ava-big">
+											<img src="{{profile_image_url_big}}" alt="Image of {{profile_name}}">
+										</div>
+										<div class="holder">
+											<strong class="name"><h2>{{profile_name}}&nbsp;<a href="http://twitter.com/{{screen_name}}" class="btn-bird-big" target="_blank"><!-- twitter --></a></h2></strong>
+											<span class="meta">
+												<span class="username-location"><strong>@{{screen_name}}</strong>&nbsp;{{profile_location}}</span>
+												<span class="bio">{{profile_description|urlize}}</span>
+												<a class="url" target="_blank" href="{{profile_url}}">{{profile_url}}</a>
+											</span>
+										</div>
+									</div>
+								</div>
+							</div>
+						</header>
+					</section>
+					{% endifnotequal %}
+					{% endifnotequal %}
+                    {% endifnotequal %}
+                    {% endifnotequal %}
+                    {% endif %}
+					
+					{% ifnotequal screen_name "list" %}
+					{% ifnotequal screen_name "lists" %}
+					<section id="newusermessage" class="post open" style="display:none;">
+						<header>
+							<div class="frame">								<div class="bar">
+									<div class="block-tweeter-big">
+										<div class="ava-big">
+											<img src="../static/images/bg-ava-big-notknown.png" alt="">
+										</div>
+										<div class="holder">
+											{% if not first_run %}<strong class="name"><h2>{{screen_name}}&nbsp;<a href="http://twitter.com/{{screen_name}}" class="btn-bird-big" target="_blank"><!-- twitter --></a></h2></strong>{% endif %}
+											<span class="meta">
+												{% if not first_run %}<span class="username-location"><strong>@{{screen_name}}</strong></span>{% endif %}
+												{% if first_run %}
+													<span class="bio">Please standby for processing of your twitter account, don't worry this is only done once, after that the Newsriver is realtime. We have to catch up a bit with your timeline.</span>
+												{%else %}
+													<span class="bio">Unfortunately we don't have any data for this view yet. Please click on the link below to go to twitter and start following.<br /></span>
+												{% endif %}
+												{% if not first_run %}
+													<br/>
+													<span class="bio"><a class="url" target="_blank" href="http://twitter.com/{{screen_name}}">http://twitter.com/{{screen_name}}</a></span>
+													<br/>
+													<span class="bio"><a class="url" href="/">Back to timeline</a></span>
+												{% endif %}													
+												<br /><br />Going to homepage in <span id='secondsdisplay'>60</span> seconds.
+											</span>
+										</div>
+									</div>								</div>
+							</div>
+						</header>
+					</section>
+					{% endifnotequal %}
+					{% endifnotequal %}
+
+					<div id="newdrops-anchor"></div>
+                    {% if ie8 %}
+                        {% for i in range100 %}
+                            <div id="newdrops-anchor{{i}}"></div>
+                        {% endfor %}
+                    {% endif %}
+					<img src="/static/images/loading.gif" id="loading-indicator" alt="Loading..." class="loadingindicator" />
+				</div>
+			</section>
+		</div>
+	</div>
+
+<div class="apple_overlay2" id="shareoverlay" style="display:none;">
+	<form id="shareform" onsubmit="return false;">
+		<input type="hidden" name="share_id_str" id="share_id_str" value="" />
+	   <fieldset> 
+		  <h2 style="font-size: 1.92em;line-height: 0.9em;font-weight:normal;color:#000;margin:0;padding: 0 91px 7px 0;">Share this item</h2> 
+		  <p> 
+			 <label>Select a previously used address</label> 
+			 <select class="form-select" id="previous_emails" onchange="javascript:toEmailField()">
+				<option value=''></option>
+				{%for e in sd.previous_emails %}
+					<option value='{{e}}'>{{e}}</option>
+				{%endfor%}
+			 </select>
+			 <input type="checkbox" id="email_clear_history">Clear history on submit
+		  </p>
+		  <div class="clear"><!-- --></div>
+		  <p> 
+			 <label>To email address<br />
+			 <i>(separate multiple addresses with commas)</i></label>
+			 <input type="text" id="share_email" name="email_friend" value="" required="required" class="form-input-text" />
+			 <input type="checkbox" id="email_add_used_addresses">Add to used addresses
+		  </p>
+		  <div class="clear"><!-- --></div>
+		  <p> 
+			 <label>Your email address<br />
+			 <i>Used for replies (optional)</i></label> 
+			 <input type="email" id="email_reply" name="email_reply" value="{{sd.reply}}" class="form-input-text" />
+			 <input type="checkbox" {% if sd.cc %}checked{% endif %} id="email_cc">Blind copy to myself
+		  </p> 
+		  <div class="clear"><!-- --></div>
+		  <p> 
+			 <label>Optional text message</label> 
+			 <textarea class="form-textarea" id="email_body"></textarea>
+		  </p> 
+		  <div class="clear"><!-- --></div>		  <img src="/static/images/submit.png" id="sharesubmitbtn" onclick="javascript:sendDrop()" style="cursor:pointer;display:block;margin-left:auto;margin-right:auto">
+	   </fieldset>  
+	</form>
+</div>
+
+<div id="tweet_dialog" title="What's happening?" style="display:none;"> 
+<div class="heading"> hello world</div>
+</div> 
+
+<div id="retweet_dialog" title="Retweet this to your followers?" style="display:none;"> 
+<div class="heading"> hello world</div>
+</div> 
+
+<div id="reply_dialog" title="Reply"  style="display:none;"> 
+<div class="heading"> hello world</div>
+</div> 
+  
+</body>
+</html>

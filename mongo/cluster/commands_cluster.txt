@@ -1,0 +1,5 @@
+
+ 
+mongod --dbpath /Users/rabshakeh/data --rest --fork --logpath /Users/rabshakeh/Desktop/md.log --master
+
+mongo 192.168.0.18:30000/admin

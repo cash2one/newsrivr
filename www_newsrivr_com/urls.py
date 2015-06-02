@@ -1,0 +1,47 @@
+import django
+from django.conf.urls.defaults import *
+from views import *
+
+urlpatterns = patterns('',
+	# newtwitter style autopagination with django
+	(r'^welcome/$', 'django.views.generic.simple.direct_to_template', {'template':'content_welcome.html'}),
+	
+	(r'^about$', 'django.views.generic.simple.direct_to_template', {'template':'content_about.html'}),
+	(r'^tos$', 'django.views.generic.simple.direct_to_template', {'template':'content_tos.html'}),
+	(r'^privacy$', 'django.views.generic.simple.direct_to_template', {'template':'content_privacy.html'}),
+	(r'^publishers$', 'django.views.generic.simple.direct_to_template', {'template':'content_publishers.html'}),
+	(r'^newsrivrstats2011$', 'django.views.generic.simple.direct_to_template', {'template':'stats.html'}),
+	
+	(r'signout', 'views.signout'),
+	(r'optout', 'views.optout'),	
+	(r'createaccount', 'views.createAccount'),
+	(r'signin/', 'views.signin'),
+	url(r'^auth/$',view=auth,name='twitter_oauth_auth'),
+	url(r'^return/$',view=return_,name='twitter_oauth_return'),
+	url(r'^clear/$',view=unauth,name='twitter_oauth_unauth'),
+	(r'^static/(?P<path>.*)$', 'django.views.static.serve', {'document_root': django.conf.settings.MEDIA_ROOT}),
+	(r'^json/(?P<page>[0-9]+)/(?P<screen_name>[a-zA-Z0-9_]+)/(?P<last_added_at_precise>[0-9.]+)/(?P<list_name>[a-zA-Z0-9-_]+)', 'views.index_json'),
+	(r'^json/newdropscount/(?P<screen_name>[a-zA-Z0-9_]+)/(?P<list_name>[a-zA-Z0-9-_]+)', 'views.new_drops_count_json'),
+	(r'^json/resetcookietimestamp/', 'views.resetcookietimestamp'),
+	(r'^json/testdata/', 'views.testdata'),
+	(r'^json/mail/(?P<dropid>[a-z0-9]+)/(?P<email>[@.a-z0-9]+)/', 'views.maildrop'),
+	(r'^json/mail/sharedatauser/', 'views.sharedatauser'),
+	(r'^json/openitem/', 'views.openitem'),
+	(r'^json/closeitem/', 'views.closeitem'),
+	(r'^json/favorite/action', 'views.favorite_action'),
+	(r'^json/tweetdata', 'views.tweetdata'),
+	(r'^json/retweet', 'views.retweet'),
+	(r'^json/tweetReply', 'views.tweetReply'),
+	(r'^json/tweet', 'views.tweet'),
+	(r'^favorites$', 'views.index_favorites'),
+	(r'^list/(?P<list_name>[a-zA-Z0-9-_]+)$', 'views.index_list'),	
+	(r'^lists$', 'views.index_lists'),
+	(r'^mentions$', 'views.index_mentions'),
+	(r'^(?P<screen_name>[a-zA-Z0-9_]+)$', 'views.index_user'),
+	(r'^page/(?P<page>[0-9]+)/(?P<screen_name>[a-zA-Z0-9_]+)/(?P<last_added_at_precise>[0-9.]+)/(?P<list_name>[a-zA-Z0-9-_]+)/(?P<randnr>[0-9]+)$', 'views.pageindex'),
+	(r'^tweet/(?P<id_str>[0-9]+)$', 'views.jqmtweet'),
+	(r'^mobile/share/(?P<id_str>[0-9]+)$', 'views.jqm_share_dialog'),
+	(r'^mobile/reply/(?P<id_str>[0-9]+)$', 'views.jqm_reply_dialog'),
+	(r'^nocache/(?P<randnr>[0-9]+)$', 'views.index'),
+	(r'^$', 'views.index'),
+)

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>NewsRivr</title>
+	<link media="all" rel="stylesheet" href="http://esther.active8.nl/static/css/mobile-tablet.css">
+	<style>
+	body {
+	        font-family:'Lucida Grande', 'Lucida Sans Unicode', arial, sans-serif;
+	}
+	.slide .frame {
+		font-size:1.2em;
+		line-height: 1.3em;
+	}
+	.small {
+		font-size:0.7em;
+	}
+	</style>
+</head>
+<body>
+	<div class="w1">
+		<div id="wrapper">
+			<header id="header"></header>
+			<section id="main">
+				<div class="main-frame">
+				 {% if body %}
+					<section class="message">
+						<div class="frame">
+							<div class="content">
+	 							<p>{{body}}</p>
+							</div>
+						</div>
+					</section>
+				 {% endif %}
+					<section class="post open">
+						<header>
+							<div class="frame">																
+								<div class="bar">
+
+				 
+									<div class="block-tweeter">
+										<div class="ava">
+											{% if data.notretweeted %}
+											<img src="{{data.profile_image_url}}" alt="">
+											{% endif %}
+											{% if data.retweeted %}
+											 <img src="{{data.retweet_profile_image_url}}">
+											{% endif %}
+										</div>
+										<div class="holder">
+											{% if data.notretweeted %}
+											<strong class="name"><a target="_blank" href='http://newsrivr.com/{{data.screen_name}}'>{{data.name}}</a></strong>
+											<span class="meta"><a target="_blank" href="http://twitter.com/#!/{{data.screen_name}}/status/{{data.id_str}}">{{datum|date:"d"}} {{datum|date:"b"|capfirst}} {{datum|date:"Y"}} {{datum|date:"H:i"}} UTC</a></span>
+											{% endif %}
+											{% if data.retweeted %}
+											<strong class="name"><a target="_blank" href='http://newsrivr.com/{{data.retweet_screen_name}}'>{{data.retweet_name}}</a></strong>
+											<span class="meta"><a target="_blank" href="http://twitter.com/#!/{{data.retweet_screen_name}}/status/{{data.retweet_id_str}}">{{retweet_datum|date:"d"}} {{retweet_datum|date:"b"|capfirst}} {{retweet_datum|date:"Y"}} {{retweet_datum|date:"H:i"}} UTC</a></span>
+											{% endif %}
+										</div>
+									</div>
+									{% if data.retweeted %}
+									<div class="block-retweeter">
+										<div class="ava">
+											<img src="{{data.profile_image_url}}" alt="">
+										</div>
+										<div class="holder">
+											<strong class="name"><img src="http://esther.active8.nl/static/images/retweet.png" alt="data.retweeted">by <a target="_blank" href='http://newsrivr.com/{{data.screen_name}}'>{{data.name}}</a>{% if retweet_count_available %}&nbsp;(and <a target="_blank" href="http://twitter.com/#!/{{data.retweet_screen_name}}/status/{{data.retweet_id_str}}">{{data.retweet_count}} others</a>){% endif %}{% if data.retweet_count_available %}&nbsp;(and <a target=\"_blank\" href=\"http://twitter.com/#!/{{data.retweet_screen_name}}/status/{{data.retweet_id_str}}\">{{data.retweet_count}} others</a>){% endif %}</strong>
+											<span class="meta"><a target="_blank" href="http://twitter.com/#!/{{data.screen_name}}/status/{{data.id_str}}">{{datum|date:"d"}} {{datum|date:"b"|capfirst}} {{datum|date:"Y"}}  {{datum|date:"H:i"}} UTC</a></span>
+										</div>
+									</div>
+									{% endif %}
+								</div>
+								
+								<div class="heading">
+									<h2>{{data.org_content|safe}}</h2>
+								</div>
+							</div>
+						</header>
+						<article class="slide">
+							<div class="frame">
+							   {% for d in data.images %}
+									<div class="img-box"> 
+									<div class="img-holder"><img src="{{d.src}}" alt="" width="{{d.width}}" /></div> 
+									<span class="top-l">&nbsp;</span><span class="top-r">&nbsp;</span><span class="bottom-l">&nbsp;</span><span class="bottom-r"></span> 
+									</div> 
+								{% endfor %}						 
+								{% for d in data.followed_links %}
+								    {% if d.image %}								    
+									  <div class="img-box">
+										  <div class="img-holder"><img src='{{d.image.src}}' width='{{d.image.width}}'></div>
+										  <span class="top-l">&nbsp;</span><span class="top-r">&nbsp;</span><span class="bottom-l">&nbsp;</span><span class="bottom-r"></span>
+									  </div>									  
+								    {% endif %}
+									{% if d.youtube %}
+										<div class="clear"><!-- --></div> 
+										{{d.youtube.desc|safe}}
+											<br />
+											<br /> 
+											<div class="clear"><!-- --></div> 
+											<div class="img-box-youtube-main"> 
+											<div class="img-holder-youtube"><object width='550' height='435'><param name='movie' value='http://www.youtube.com/v/{{d.youtube.videotag}}?fs=1&amp;hl=en_US'></param><param name='allowFullScreen' value='true'></param><param name='allowscriptaccess' value='always'></param><embed src='http://www.youtube.com/v/{{d.youtube.videotag}}?fs=1&amp;hl=en_US' type='application/x-shockwave-flash' allowscriptaccess='always' allowfullscreen='true' width='550' height='435'></embed></object> </div> 
+											<span class="top-l">&nbsp;</span><span class="top-r">&nbsp;</span><span class="bottom-l">&nbsp;</span><span class="bottom-r"></span> 
+										</div> 
+										{% for t in d.youtube.thumbs %} 
+											<div class="img-box-youtube-thumb"> 
+											<div class="img-holder"><img src="{{t.src}}" alt="" width="120" height="90" /></div> 
+											<span class="top-l">&nbsp;</span><span class="top-r">&nbsp;</span><span class="bottom-l">&nbsp;</span><span class="bottom-r"></span> 
+											</div><br /> 
+										{% endfor %}  
+										<div class="clear"><!-- --></div> 
+									{% endif %}
+									{% if d.vimeo%} 
+										{{d.vimeo.desc|safe}} <br/> 
+										<br/> 
+										<div class="img-container"> 
+										<div class="img-box"> 
+											<div class="img-holder"><iframe src='{{d.vimeo.iframe}}' width='706' height='450' frameborder='0'></iframe></div> 
+											<span class="top-l">&nbsp;</span><span class="top-r">&nbsp;</span><span class="bottom-l">&nbsp;</span><span class="bottom-r"></span> 
+										</div> 
+										</div> 
+									{% endif %}								
+								    {{d.simplehtml|safe}}
+								{% endfor %}
+							</div>
+						</article>
+					</section>
+					<section class="message">
+						<div class="frame">
+							<div class="content">
+	 							<p><a class="small" href='http://esther.active8.nl'>You're receiving this message because <b>{{name}}</b> wanted to share this with you from NewsRivr</a>.</p>
+							</div>
+						</div>
+					</section>
+				</div>
+			</section>
+		</div>
+	</div>
+	<footer id="footer">
+	</footer>
+</body>
+</html>

@@ -1,0 +1,27 @@
+        {% extends "content_template.html" %}
+
+		{% block head %}
+		<META HTTP-EQUIV="Refresh" CONTENT="100;URL=/">
+		<SCRIPT LANGUAGE="JavaScript"><!--
+		function redirect () { setTimeout("go_now()",10000); }
+		function go_now ()   { window.location.href = "/"; }
+		//-->
+		</SCRIPT>
+		{% endblock %}
+
+		{% block body %}onLoad="redirect()"{% endblock %}
+
+		{% block logo %}<h1 class="logo">NewsRivr</h1>{% endblock %}
+
+		{% block title %}Signout{% endblock %}
+
+		{% block content %}
+						<section class="sign-in">
+							<span class="btn-signed-out">You're signed out!</span>
+							<a href="/">If you are not automatically redirected to the homepage, you can click here...</a>
+						</section>
+						<section class="info">
+							<p>&nbsp;</p>
+						</section>
+		{% endblock %}
+

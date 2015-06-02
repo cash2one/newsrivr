@@ -1,0 +1,17 @@
+{% extends "jqm_template.html" %}
+
+{%block title%}Tweet{%endblock%}
+
+{% block content %}
+
+<div data-role="page"> 	
+	<div data-role="content">
+		<a href="/mobile/reply/{{id_str}}" data-role="button">Reply</a>
+		<a href="/mobile/retweet/{{id_str}}" data-role="button">Retweet</a>
+		<a href="/mobile/favorite/{{id_str}}" data-role="button">Favorite</a>
+		<a href="/mobile/share/{{id_str}}" data-role="button">Share</a>				 		  
+		<a data-role="button" data-rel="back" data-theme="a">Cancel</a>    
+	</div> 
+</div> 
+ 
+ {% endblock %}

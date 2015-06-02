@@ -1,0 +1,196 @@
+{% extends "jqm_template.html" %}
+
+{% block content %}
+<div data-role="page" id='{{drop.id_str}}'>	
+  <div data-role="header">
+	<a href="#" class="ui-btn-left ui-btn ui-btn-up-a ui-btn-icon-left ui-btn-corner-all ui-shadow" data-rel="back" data-icon="arrow-l" data-theme="a"><span class="ui-btn-inner ui-btn-corner-all"><span class="ui-btn-text">Back</span><span class="ui-icon ui-icon-arrow-l ui-icon-shadow"></span></span></a>
+    <h1>Tweet</h1>
+  </div>
+
+  <div data-role="content">
+	
+		<div data-role="content" class="ui-body ui-body-b" role="main">	
+			<div class="img-container"> 
+				<div class="img-box">
+					<div class="img-holder">	<img src="{{drop.profile_image_url_big}}" align='right' width='64' alt="Image of {{drop.name}}"></div>
+					<span class="top-l">&nbsp;</span><span class="top-r">&nbsp;</span><span class="bottom-l">&nbsp;</span><span class="bottom-r"></span>
+				</div> 
+			</div>
+			<h3 style="white-space: normal;">{{drop.org_content|safe}}</h3>
+			{% if drop.retweeted %}By {{drop.retweet_name}} retweeted {% endif %}<a target="_blank" href='http://twitter.com/#!/{{drop.screen_name}}/status/{{drop.id_str}}'>{{drop.timediff}}</a> by <a href='/page/1/{{drop.screen_name}}/0/None/{{randomnumber}}' rel='external'>{{drop.name}}</a>
+			<a href="http://twitter.com/#!/{{drop.screen_name}}" target="_blank"><img src='/static/images/smallbird.png' border=0></a>
+		</div>
+
+		{%if drop.hascontent%}
+			<div data-role="content" class="ui-body ui-body-b" role="main">
+	
+			{% for i in drop.images %}
+				<div class="img-box">
+					<div class="img-holder"><img src="{{i.src}}" align='left' alt="" width="230" /></div>
+					<span class="top-l">&nbsp;</span><span class="top-r">&nbsp;</span><span class="bottom-l">&nbsp;</span><span class="bottom-r"></span>
+				</div>
+			{% endfor %}		
+			{% for fl in drop.followed_links %}		
+				{% if fl.image %}
+					<div class="img-container"> 
+						<div class="img-box" {%if not hastext%}style="float:left"{%endif%}>
+							<div class="img-holder"><img src="{{fl.image.src}}" align='left' alt="" width="{{fl.image.width}}" /></div>
+							<span class="top-l">&nbsp;</span><span class="top-r">&nbsp;</span><span class="bottom-l">&nbsp;</span><span class="bottom-r"></span>
+						</div> 
+					</div> 		
+				{% endif %}
+				{% if fl.cinch %}
+					<audio src="{{fl.cinch.mp3}}" controls preload="auto" autobuffer></audio><br/>
+					<a target='_blank' href='{{fl.cinch.mp3}}'>direct link to mp3</a>
+				{% endif %}
+				{% if fl.youtube %}
+					<div class="clear"><!-- --></div>
+						{{fl.youtube.desc|safe}}
+						<div class="img-box-youtube-main">
+						<div class="img-holder-youtube"><object width='260' height='150'><param name="wmode" value="transparent"></param><param name='movie' value='http://www.youtube.com/v/{{fl.youtube.videotag}}?fs=1&amp;hl=en_US'></param><param name='allowFullScreen' value='true'></param><param name='allowscriptaccess' value='always'></param><embed src='http://www.youtube.com/v/{{fl.youtube.videotag}}?fs=1&amp;hl=en_US' type='application/x-shockwave-flash' allowscriptaccess='always' allowfullscreen='true' width='260' height='150' wmode='transparent'></embed></object></div>
+						<span class="top-l">&nbsp;</span><span class="top-r">&nbsp;</span><span class="bottom-l">&nbsp;</span><span class="bottom-r"></span>
+					</div>
+					<div class="clear"><!-- --></div>
+				{% endif %}
+				{% if fl.vimeo %}
+					{{fl.vimeo.desc|safe}}
+					<div class="img-container">
+						<div class="img-box">
+							<div class="img-holder" style="margin-bottom:-5px;"><iframe src='{{fl.vimeo.iframe}}' width='260' height='150' frameborder='0'></iframe></div>
+							<span class="top-l">&nbsp;</span><span class="top-r">&nbsp;</span><span class="bottom-l">&nbsp;</span><span class="bottom-r"></span>
+						</div>
+					</div>
+				{% endif %}
+				{{fl.simplehtml|safe}}
+				{% if fl.adddivider%}<div class="divider"><!-- --></div>{% endif %}
+			{% endfor %}
+			</div>  
+		{%endif%}		
+		
+	</div>
+  
+	<style type="text/css">
+		.footer-actions .ui-btn .ui-btn-inner { padding-top: 40px !important; }
+		.footer-actions .ui-btn .ui-icon { width: 30px!important; height: 30px!important; margin-left: -15px !important; box-shadow: none!important; -moz-box-shadow: none!important; -webkit-box-shadow: none!important; -webkit-border-radius: none !important; border-radius: none !important; }	
+		#favorite-on .ui-icon { background:  url(/static/images/bar-icon-mobile-favorite-on.png) 50% 50% no-repeat;  background-size: 36px 26px; }
+		#favorite-off .ui-icon { background:  url(/static/images/bar-icon-mobile-favorite-off.png) 50% 50% no-repeat; background-size: 36px 26px; }
+		#retweet-on .ui-icon { background:  url(/static/images/bar-icon-mobile-retweet-on.png) 50% 50% no-repeat; background-size: 36px 26px; }
+		#retweet-off .ui-icon { background:  url(/static/images/bar-icon-mobile-retweet-off.png) 50% 50% no-repeat; background-size: 36px 26px; }
+		#reply .ui-icon { background:  url(/static/images/bar-icon-mobile-reply.png) 50% 50% no-repeat; background-size: 36px 26px; }
+		#back .ui-icon { background:  url(/static/images/bar-icon-mobile-back.png) 50% 50% no-repeat; background-size: 36px 26px; }
+		#share .ui-icon { background:  url(/static/images/bar-icon-mobile-share.png) 50% 50% no-repeat; background-size: 36px 26px; }
+	</style>
+	<script language="javascript">
+	var n_vars = {
+		self: this,
+		favbtnon: {%if drop.isfavorite%}true{%else%}false{%endif%},
+		retweetbtnon: {%if drop.isretweeted%}true{%else%}false{%endif%},
+	};
+
+	function retweetAction(id_str) {
+		$("#btnretweettxt").text("Busy");		
+		if (n_vars.working==true) {
+			console.log("busy")
+			return;
+		}
+		else {
+			console.log("getting busy")
+			n_vars.working = true;
+		}
+		var data = {};
+		data["id_str"] = id_str;
+		if (n_vars.retweetbtnon) {
+			data["action"] = "destroy";
+		}
+		else {
+			data["action"] = "create";
+		}		
+		$.ajax({
+			type: "POST",
+			url: "/json/retweet",
+			dataType: "json",
+			cache: false,
+			data: data,
+			success: function(data, text_status) {
+				if (n_vars.retweetbtnon) {
+					$("#retweet-on .ui-icon").css("backgroundImage", "url(/static/images/bar-icon-mobile-retweet-off.png)");
+					$("#retweet-off .ui-icon").css("backgroundImage", "url(/static/images/bar-icon-mobile-retweet-off.png)");
+					$("#btnretweettxt").text("Retweet");		
+					n_vars.retweetbtnon = false;
+				}
+				else {
+					$("#retweet-on .ui-icon").css("backgroundImage", "url(/static/images/bar-icon-mobile-retweet-on.png)");
+					$("#retweet-off .ui-icon").css("backgroundImage", "url(/static/images/bar-icon-mobile-retweet-on.png)");
+					$("#btnretweettxt").text("Undo retweet");
+					n_vars.retweetbtnon = true;		
+				}
+				n_vars.working = false;
+			},
+			complete: function(data, text_status) {},
+			error: function(objRequest) {
+				console.log(objRequest);
+			}
+		});			
+	}
+	
+	function favAction(id_str) {
+		$("#btnfavtxt").text("Busy");		
+		if (n_vars.working==true) {
+			console.log("busy")
+			return;
+		}
+		else {
+			console.log("getting busy")
+			n_vars.working = true;
+		}
+		var data = {};
+		data["id_str"] = id_str;
+		if (n_vars.favbtnon) {
+			data["action"] = "destroy";
+		}
+		else {
+			data["action"] = "create";
+		}		
+		$.ajax({
+			type: "POST",
+			url: "/json/favorite/action",
+			dataType: "json",
+			cache: false,
+			data: data,
+			success: function(data, text_status) {
+				if (n_vars.favbtnon) {
+					$("#favorite-on .ui-icon").css("backgroundImage", "url(/static/images/bar-icon-mobile-favorite-off.png)");
+					$("#favorite-off .ui-icon").css("backgroundImage", "url(/static/images/bar-icon-mobile-favorite-off.png)");
+					$("#btnfavtxt").text("Favorite");		
+					n_vars.favbtnon = false;
+				}
+				else {
+					$("#favorite-on .ui-icon").css("backgroundImage", "url(/static/images/bar-icon-mobile-favorite-on.png)");
+					$("#favorite-off .ui-icon").css("backgroundImage", "url(/static/images/bar-icon-mobile-favorite-on.png)");
+					$("#btnfavtxt").text("Unfavorite");
+					n_vars.favbtnon = true;		
+				}
+				n_vars.working = false;
+			},
+			complete: function(data, text_status) {
+				
+			},
+			error: function(objRequest) {
+				n_vars.working = false;
+				console.log(objRequest);
+			}
+		});				
+	}
+	</script>	
+	<div data-role="footer" class="footer-actions">
+		<div data-role="navbar" class="footer-actions">
+			<ul>
+				<li><a href="/mobile/reply/{{drop.id_str}}" id="reply" data-icon="custom" data-role="button">Reply</a></li>
+				<li><a href="javascript:retweetAction('{{drop.id_str}}')"  id="retweet-{%if drop.isretweeted%}on{%else%}off{%endif%}" data-icon="custom" data-role="button"><span id='btnretweettxt'>{%if drop.isretweeted%}Undo retweet{%else%}Retweet{%endif%}</span></a></li>
+				<li><a href="javascript:favAction('{{drop.id_str}}')" id="favorite-{%if drop.isfavorite%}on{%else%}off{%endif%}" data-icon="custom" data-role="button"><span id='btnfavtxt'>{%if drop.isfavorite%}Unfavorite{%else%}Favorite{%endif%}</span></a></li>
+				<li><a href="/mobile/share/{{drop.id_str}}" id="share" data-icon="custom">Share</a></li>
+			</ul>
+		</div><!-- /navbar -->
+	</div><!-- /footer -->
+</div>
+{% endblock %}

@@ -1,3 +1,11 @@
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from builtins import open
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 import os
 import re
 import cgi
@@ -9,13 +17,13 @@ import time
 import copy
 import Image
 import datetime
-import urlparse
-import urllib
+import urllib.parse
+import urllib.request, urllib.parse, urllib.error
 import simplejson
 import base64
-import cStringIO
+import io
 import pymongo
-import cPickle
+import pickle
 import traceback
 import hashlib
 import threading
@@ -25,7 +33,7 @@ import subprocess
 import feedparser
 import Levenshtein
 import datetime
-import urlparse
+import urllib.parse
 import types
 import pycurl
 import pymongo.objectid
@@ -79,8 +87,8 @@ def mailStringToAdmin(subject, str):
 def mailException(e):
 	try:
 		import traceback
-		import StringIO
-		s = StringIO.StringIO()
+		import io
+		s = io.StringIO()
 		traceback.print_exc(file=s)
 		clog(s.getvalue())
 		mailStringToAdmin("mailException", s.getvalue())		
@@ -89,7 +97,7 @@ def mailException(e):
 	
 def clog(s):		
 	s= str(s)
-	print strftime("%Y-%m-%d %H:%M:%S", gmtime())+": "+s
+	print(strftime("%Y-%m-%d %H:%M:%S", gmtime())+": "+s)
 	
 def unicodeToHTMLEntities(text):
 	"""Converts unicode to HTML entities.  For example '&' becomes '&amp;'."""
@@ -103,7 +111,7 @@ def getDB():
 		try:
 			conn = pymongo.Connection(MONGOSERVER, MONGOPORT)	
 			db = conn.newsrivr
-		except Exception, e:
+		except Exception as e:
 			clog("no conn")
 			clog(e)
 			time.sleep(2)
@@ -159,9 +167,9 @@ def getCollLists():
 
 def klog(s):
 	s= str(s)
-	print "---------------------------"
-	print s
-	print "---------------------------"
+	print("---------------------------")
+	print(s)
+	print("---------------------------")
 	exit(1)
 	
 def getTimeWithMS():
@@ -183,7 +191,7 @@ def checkIfRunning(cf):
 		f.write(timestamp)
 		f.write(str(os.getpid())+"\n")
 		return f
-	except Exception, e:
+	except Exception as e:
 		#traceback.print_exc(file=sys.stdout)
 		return None
 
@@ -200,8 +208,8 @@ def driver(main, cf):
 		main()
 	except (KeyboardInterrupt, SystemExit):
 		os.system("rm "+ks)
-	except Exception, e:
-		print e
+	except Exception as e:
+		print(e)
 		os.system("rm "+ks)
 	lf.close()
 	os.remove(lf.name)

@@ -1,8 +1,16 @@
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from builtins import open
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 import os
 import time
 import hashlib
 import string
-import urllib
+import urllib.request, urllib.parse, urllib.error
 import subprocess
 from tempfile import *
 from hn import grabContent
@@ -18,12 +26,12 @@ def getContentRuby(url, t1_name, t2_name):
     p.wait()
     error = p.stderr.read()
     if len(error)!=0:
-        print url
-        print error
+        print(url)
+        print(error)
     s = p.stdout.read()
     s = s.strip()
     if len(s)>0:
-        print s
+        print(s)
         
 def getfilenames(content):
     m = hashlib.md5()
@@ -46,7 +54,7 @@ def main():
     open("in.html", "w").write(content)
     #
     content = grabContent('xx', content)
-    print content
+    print(content)
     os.remove(t1)
     os.remove(t2)
 

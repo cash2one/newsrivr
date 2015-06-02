@@ -12,12 +12,22 @@ Requires:
   simplejson
   oauth2
 '''
+from __future__ import unicode_literals
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from builtins import dict
+from builtins import int
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import object
 
 __author__ = "Konpaku Kogasa, Hameedullah Khan"
 __version__ = "0.1"
 
 # Library modules
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import time
 
 # In Python2.6 the parse_qsl() function is located in the urlparse library.  In earlier versions it was part of the cgi library.
@@ -25,7 +35,7 @@ import time
 # Swapping these two lines is all that is required to make the code compatible with the other version
 
 #import cgi as urlparse
-import urlparse
+import urllib.parse
 
 # Non library modules
 import simplejson
@@ -38,7 +48,7 @@ AUTHORIZATION_URL = 'https://api.twitter.com/oauth/authorize'
 SIGNIN_URL = 'https://api.twitter.com/oauth/authenticate'
 
 
-class OAuthApi:
+class OAuthApi(object):
     def __init__(self, consumer_key, consumer_secret, token=None, token_secret=None):
         if token and token_secret:
             token = oauth.Token(token, token_secret)
@@ -49,7 +59,7 @@ class OAuthApi:
         self._access_token = token 
 
     def _GetOpener(self):
-        opener = urllib2.build_opener()
+        opener = urllib.request.build_opener()
         return opener
         
     def _FetchUrl(self,
@@ -166,7 +176,7 @@ class OAuthApi:
         if resp['status'] != '200':
             raise Exception("Invalid response %s." % resp['status'])
 
-        return dict(urlparse.parse_qsl(content))
+        return dict(urllib.parse.parse_qsl(content))
     
     def getAccessToken(self, token, verifier=None, url=ACCESS_TOKEN_URL):
         '''Get a Request Token from Twitter
@@ -182,7 +192,7 @@ class OAuthApi:
         client = oauth.Client(self._Consumer, token)
         
         resp, content = client.request(url, "POST")
-        return dict(urlparse.parse_qsl(content))
+        return dict(urllib.parse.parse_qsl(content))
     
     def FollowUser(self, user_id, options = {}):
         '''Follow a user
@@ -509,10 +519,10 @@ class OAuthApi:
             json = self._FetchUrl("https://api.twitter.com/1/" + call + ".json", type, parameters)
           # This is the most common error type you'll get.  Twitter is good about returning codes, too
           # Chances are that most of the time you run into this, it's going to be a 503 "service temporarily unavailable".  That's a fail whale.
-        except urllib2.HTTPError, e:
+        except urllib.error.HTTPError as e:
             return e
           # Getting an URLError usually means you didn't even hit Twitter's servers.  This means something has gone TERRIBLY WRONG somewhere.
-        except urllib2.URLError, e:
+        except urllib.error.URLError as e:
             return e
         else:
             return simplejson.loads(json)

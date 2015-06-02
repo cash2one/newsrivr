@@ -1,3 +1,12 @@
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from builtins import int
+from future import standard_library
+standard_library.install_aliases()
+from builtins import input
+from builtins import str
 #!/usr/bin/env python
 import os
 import time
@@ -16,9 +25,9 @@ def getDB():
 	while not conn:
 		try:
 			conn = pymongo.Connection(MONGOSERVER, MONGOPORT)
-		except Exception, e:
+		except Exception as e:
 			time.sleep(1)
-			print "no conn", e
+			print("no conn", e)
 	db = conn.newsrivr
 	return db
 
@@ -33,25 +42,25 @@ def getCollDrops():
 	return coll
 
 def clog(s):
-	print str(s)
+	print(str(s))
 	
 def main():
 	if "Darwin" not in os.popen("uname").read():
-		print "this can't be run on a server dude"
+		print("this can't be run on a server dude")
 		return
-	print "DELETE USERS !!!"
+	print("DELETE USERS !!!")
 	import random
 	ri = random.randint(100,1000)
-	print ri
+	print(ri)
 	keepdropuser = []
 	deletedropuser = []
-	richeck = raw_input("Check: wat is het nummer: ")	
+	richeck = input("Check: wat is het nummer: ")	
 	if ri==int(richeck):
-		print "ok, deleting"
+		print("ok, deleting")
 		for u in getCollUsers().find():
 			if "screen_name" in u:
 				if "rabshakeh" in u["screen_name"] or "Scobleizer" in u["screen_name"]:
-					print u["screen_name"]
+					print(u["screen_name"])
 					keepdropuser.append(u["newsrivr_userid_md5"])
 				else:
 					deletedropuser.append(u["newsrivr_userid_md5"])
@@ -62,14 +71,14 @@ def main():
 		getCollDrops().remove({"newsrivr_userid_md5":{"$nin":keepdropuser}})
 		return
 	else:
-		print "bye"
+		print("bye")
 
 def main2():
 	for d in getCollDrops().find():
 		if len(d["newsrivr_userid_md5"])>1:
-			print d["newsrivr_userid_md5"]
+			print(d["newsrivr_userid_md5"])
 		if len(d["newsrivr_userid_md5"])==0:
-			print "gek"
+			print("gek")
 			exit(1)
 			
 if __name__ == '__main__':

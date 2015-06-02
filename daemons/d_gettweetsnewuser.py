@@ -1,9 +1,18 @@
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from builtins import dict
+from builtins import int
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 #!/usr/bin/env python
 from d_utils import *
 
 def clog(s):
     s= str(s)
-    print '\033[%91m'+strftime("%Y-%m-%d %H:%M:%S", gmtime())+": "+s+'\033[%0m'
+    print('\033[%91m'+strftime("%Y-%m-%d %H:%M:%S", gmtime())+": "+s+'\033[%0m')
 
 def insertTweet(id, user, tweet):
     col = getCollUnprocessedTweets()
@@ -56,7 +65,7 @@ def main():
 					if getCollLists().find({"for_user":dlist["for_user"], "event":None}).count()==0:
 						getCollLists().save(dlist, safe=True)					
 			time.sleep(1)                
-	except (Exception), e:
+	except (Exception) as e:
 		mailException(e)
 
 if __name__=="__main__":

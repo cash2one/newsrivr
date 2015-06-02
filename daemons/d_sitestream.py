@@ -1,11 +1,21 @@
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from builtins import open
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
+from builtins import object
 
 from d_utils import *
 
 def clog(s):
 	s= str(s)
-	print '\033[%95m'+strftime("%Y-%m-%d %H:%M:%S", gmtime())+": "+s+'\033[%0m'
+	print('\033[%95m'+strftime("%Y-%m-%d %H:%M:%S", gmtime())+": "+s+'\033[%0m')
 	
-class Client:
+class Client(object):
 	def __init__(self, users):
 		self.friends = []
 		self.buffer = ""
@@ -53,7 +63,7 @@ class Client:
 				getCollStream().insert(d, safe=True)
 			else:
 				clog("got message already")
-		except (Exception), e:
+		except (Exception) as e:
 			mailException(e)
 			
 	def recurse_splits(self, d):
@@ -69,7 +79,7 @@ class Client:
 
 	def on_receive(self, data):
 		if "UNAUTHORIZED" in data:
-			print data
+			print(data)
 		self.buffer += data
 		if data.endswith("\r\n") and self.buffer.strip():
 			self.recurse_splits(self.buffer)
@@ -84,7 +94,7 @@ def checkIfRunning():
 		f.write(timestamp)
 		f.write(str(os.getpid())+"\n")
 		return f
-	except Exception, e:
+	except Exception as e:
 		clog("already running")
 		#traceback.print_exc(file=sys.stdout)
 		return None
@@ -170,8 +180,8 @@ def driver():
 		os.system("rm "+ks)
 		rm.terminate()
 		killSubProcess()	   
-	except Exception, e:
-		print e
+	except Exception as e:
+		print(e)
 		os.system("rm "+ks)
 	lf.close()
 	os.remove(lf.name)

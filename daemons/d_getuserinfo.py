@@ -1,9 +1,17 @@
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from builtins import dict
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 #!/usr/bin/env python
 from d_utils import *
 	
 def clog(s):
     s= str(s)
-    print '\033[%94m'+strftime("%Y-%m-%d %H:%M:%S", gmtime())+": "+s+'\033[%0m'
+    print('\033[%94m'+strftime("%Y-%m-%d %H:%M:%S", gmtime())+": "+s+'\033[%0m')
     
 def deleteDrops(dropids):
     for did in dropids:
@@ -75,7 +83,7 @@ def main():
 							deleteDrops(drops_to_remove)
 				clog("done")
 			time.sleep(1)
-	except (Exception), e:
+	except (Exception) as e:
 		mailException(e)
 		        
 if __name__=="__main__":

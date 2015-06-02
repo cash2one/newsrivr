@@ -1,9 +1,18 @@
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from builtins import dict
+from builtins import int
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 #!/usr/bin/env python
 from d_utils import *
 
 def clog(s):
 	s= str(s)
-	print '\033[%92m'+strftime("%Y-%m-%d %H:%M:%S", gmtime())+": "+s+'\033[%0m'
+	print('\033[%92m'+strftime("%Y-%m-%d %H:%M:%S", gmtime())+": "+s+'\033[%0m')
 	
 def getUserByIDStr(id_str):
 	users = getCollUsers()
@@ -174,8 +183,8 @@ def processStream(s, queue):
 								clog("drop does not exists")
 							clog("delete drop")
 							drops_to_delete.append(s["message"]["delete"]["status"]["id_str"])						
-					except Exception, e:
-						print e
+					except Exception as e:
+						print(e)
 					dc += 1					   
 				elif "text" in s["message"] and "id_str" in s["message"]:
 					#clog("new tweet")
@@ -291,7 +300,7 @@ def processStream(s, queue):
 				#print "sleeping"
 			#	time.sleep(0.2)		
 		queue.put(1)
-	except (Exception), e:
+	except (Exception) as e:
 		mailException(e)
 	
 def processStreamDriver():
@@ -337,7 +346,7 @@ def main():
 	while True:
 		try:
 			processStreamDriver()
-		except (Exception), e:
+		except (Exception) as e:
 			mailException(e)
 		global osname
 		if not osname:

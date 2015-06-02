@@ -1,8 +1,16 @@
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from builtins import open
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 import gzip
-import urllib2
-import urlparse
+import urllib.request, urllib.error, urllib.parse
+import urllib.parse
 import sys
-from StringIO import StringIO
+from io import StringIO
 import socket
 
 #USER_AGENT = "Mozilla/5.0"
@@ -40,7 +48,7 @@ def latin1_to_ascii (unicrap):
         }
     r = ''
     for i in unicrap:
-        if xlate.has_key(ord(i)):
+        if ord(i) in xlate:
             r += xlate[ord(i)]
         elif ord(i) >= 0x80:
             pass
@@ -48,20 +56,20 @@ def latin1_to_ascii (unicrap):
             r += str(i)
     return r
 
-class SmartRedirectHandler(urllib2.HTTPRedirectHandler):
+class SmartRedirectHandler(urllib.request.HTTPRedirectHandler):
     def http_error_301(self, req, fp, code, msg, headers):
-        result = urllib2.HTTPRedirectHandler.http_error_301(self, req, fp, code, msg, headers)
+        result = urllib.request.HTTPRedirectHandler.http_error_301(self, req, fp, code, msg, headers)
         result.status = code
         return result
 
     def http_error_302(self, req, fp, code, msg, headers):
-        result = urllib2.HTTPRedirectHandler.http_error_302(self, req, fp, code, msg, headers)
+        result = urllib.request.HTTPRedirectHandler.http_error_302(self, req, fp, code, msg, headers)
         result.status = code
         return result
 
-class DefaultErrorHandler(urllib2.HTTPDefaultErrorHandler):
+class DefaultErrorHandler(urllib.request.HTTPDefaultErrorHandler):
     def http_error_default(self, req, fp, code, msg, headers):
-        result = urllib2.HTTPError(req.get_full_url(), code, msg, headers, fp)
+        result = urllib.error.HTTPError(req.get_full_url(), code, msg, headers, fp)
         result.status = code
         return result
     
@@ -70,16 +78,16 @@ def openAnything(source, etag=None, lastmodified=None, agent=USER_AGENT):
         return source
     if source == '-':
         return sys.stdin
-    if urlparse.urlparse(source)[0] == 'http':
+    if urllib.parse.urlparse(source)[0] == 'http':
         # open URL with urllib2
-        request = urllib2.Request(source)
+        request = urllib.request.Request(source)
         request.add_header('User-Agent', agent)
         if lastmodified:
             request.add_header('If-Modified-Since', lastmodified)
         if etag:
             request.add_header('If-None-Match', etag)
         request.add_header('Accept-encoding', 'gzip')
-        opener = urllib2.build_opener(SmartRedirectHandler(), DefaultErrorHandler())
+        opener = urllib.request.build_opener(SmartRedirectHandler(), DefaultErrorHandler())
         return opener.open(request)
     # try to open with native open function (if source is a filename)
     try:
@@ -112,4 +120,4 @@ def fetch(source, etag=None, lastmodified=None, agent=USER_AGENT):
 
 if __name__=="__main__":
     data = fetch("http://r2.ly/8gk8")
-    print data["data"]
+    print(data["data"])

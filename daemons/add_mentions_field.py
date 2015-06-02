@@ -1,3 +1,9 @@
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
 import re
 import os
 import time
@@ -19,7 +25,7 @@ def getDB():
             conn = pymongo.Connection(MONGOSERVER, MONGOPORT)
         except:
             time.sleep(1)
-            print "no conn"
+            print("no conn")
     db = conn.newsrivr
     return db
 
@@ -64,7 +70,7 @@ def main():
         cnt = cnt + 1
         #print d["can_be_opened"]
         if cnt%100==0:
-            print cnt
+            print(cnt)
         getCollDrops().save(d, safe=True)
 
 if __name__ == '__main__':

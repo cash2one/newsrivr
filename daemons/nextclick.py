@@ -1,9 +1,21 @@
 #!/usr/bin/env python
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import absolute_import
+from builtins import open
+from builtins import int
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
+from builtins import object
+from past.utils import old_div
 from d_utils import *
 
 def clog(s):
     s= str(s)
-    print '\033[%93m'+strftime("%Y-%m-%d %H:%M:%S", gmtime())+": "+s+'\033[%0m'
+    print('\033[%93m'+strftime("%Y-%m-%d %H:%M:%S", gmtime())+": "+s+'\033[%0m')
 
 def unicodeToHTMLEntities(text):
     """Converts unicode to HTML entities.  For example '&' becomes '&amp;'."""
@@ -25,22 +37,22 @@ def linkList(text):
     
 def isImage(imglink):
     try:
-        file = urllib.urlopen(imglink)
+        file = urllib.request.urlopen(imglink)
         im = cStringIO.StringIO(file.read()) # constructs a StringIO holding the image
         i = Image.open(im)
         return True
-    except Exception, e:
+    except Exception as e:
         return False
 
 def getSizeInMB(url):
     try:
-        request = urllib2.Request(url)
-        opener = urllib2.build_opener()
+        request = urllib.request.Request(url)
+        opener = urllib.request.build_opener()
         firstdatastream=opener.open(request)
         size = -1
-        size = float(firstdatastream.headers.dict["content-length"])/1000000
+        size = old_div(float(firstdatastream.headers.dict["content-length"]),1000000)
         return size
-    except (Exception), ex:
+    except (Exception) as ex:
         return -1
 
 def getContentWget(u):
@@ -60,8 +72,8 @@ def getContentWget(u):
 def fetch2(u):    
     content = {}
     content["status"] = 404
-    h = urllib2.urlopen(u).headers.headers
-    s = urllib2.urlopen(u)
+    h = urllib.request.urlopen(u).headers.headers
+    s = urllib.request.urlopen(u)
     content["url"] = s.geturl()
     content["status"] = s.getcode()
     content["data"] = s.read()
@@ -108,25 +120,25 @@ def findLinks(text):
                             if not ishtml(d["data"]):
                                 clog("alleen maar crap returning")
                                 return ll
-                except Exception, e:
+                except Exception as e:
                     clog(e)
                     try:
                         d = fetch2(lk)
-                    except Exception, e:
+                    except Exception as e:
                         clog(e)
                         try:
                             d = getContentWget(lk)
-                        except Exception, e:
+                        except Exception as e:
                             clog(e)                            
                             time.sleep(60)
                             try:
                                 d = fetch2(lk)
-                            except Exception, e:
+                            except Exception as e:
                                 time.sleep(60)
                                 clog(e)
                                 try:
                                     d = getContentWget(lk)
-                                except Exception, e:
+                                except Exception as e:
                                     clog(e)
                 if "status" not in d:
                     return ll                
@@ -182,7 +194,7 @@ def findLinks(text):
                 if "url" in d:                                
                     if "http://mcaf.ee/" in d["url"]:
                         for frame in BeautifulSoup(d["data"], parseOnlyThese=SoupStrainer("frame")):
-                            if frame.has_key("src"):
+                            if "src" in frame:
                                 src = frame["src"]
                                 if "http" in src:
                                     d = fetch(src)
@@ -199,7 +211,7 @@ def findLinks(text):
                                         d["image"]=isImage(d["url"])
                                         ll = []
                                         ll.append(d)
-        except Exception, e:
+        except Exception as e:
             clog(lk)
             traceback.print_exc(file=sys.stdout)
             content = {}
@@ -207,7 +219,7 @@ def findLinks(text):
             content["status"] = 200
             content["data"] = "<div id='nr_error'>findlinks:"+str(e)+"</div>"
             content["image"] = False
-            print content
+            print(content)
             return [content]
     return ll
 
@@ -224,12 +236,12 @@ def getContentRuby(url, t1_name, t2_name, difficult=False):
     p.wait()
     error = p.stderr.read()
     if len(error)!=0:
-        print url
-        print error
+        print(url)
+        print(error)
     s = p.stdout.read()
     s = s.strip()
     if len(s)>0:
-        print s
+        print(s)
     
 def getfilenames(content):
     t1 = NamedTemporaryFile(delete=False)
@@ -253,7 +265,7 @@ def getLinkDensityPara(html):
     elem = BeautifulSoup(html)
     link_length = len("".join([i.text or "" for i in elem.findAll("a")]))
     text_length = len(_text(elem))
-    return float(link_length) / max(text_length, 1)
+    return old_div(float(link_length), max(text_length, 1))
 
 def getContentDiv(s):
     try:
@@ -265,17 +277,17 @@ def getContentDiv(s):
         soup = BeautifulSoup(s)
         whitespace = True
         for tag in soup.findAll("div"):
-            if tag.has_key("id"):
+            if "id" in tag:
                 if SUPERPOSITIVE.match(tag["id"].lower()):
                     #print getLinkDensityPara(str(tag))
                     if len(striptags(str(tag)))>300:
                         return str(tag)
-            if tag.has_key("class"):
+            if "class" in tag:
                 if SUPERPOSITIVE.match(tag["class"].lower()):
                     if len(striptags(str(tag)))>300:
                         return str(tag)
         return s
-    except Exception, e:
+    except Exception as e:
         clog(e)
         return s
     
@@ -287,7 +299,7 @@ def removeForms(s):
         for tag in soup.findAll("select"):
             tag.extract()
         return str(soup).strip()
-    except Exception, e:
+    except Exception as e:
         clog(e)
         return s    
     
@@ -304,17 +316,17 @@ def grabTheContent(content, link, data, raw=False):
         soup = BeautifulSoup(data)
         whitespace = True
         for tag in soup.findAll("div"):
-            if tag.has_key("id"):
+            if "id" in tag:
                 if "deckly-post"==tag["id"]:
                    data = str(tag)
     if "slashdot" in link:
         for i in range(0,20):
             f = feedparser.parse("http://rss.slashdot.org/Slashdot/slashdot")
-            if f.has_key("entries"):
+            if "entries" in f:
                 for i in f["entries"]:
-                    if i.has_key("title"):
+                    if "title" in i:
                         if Levenshtein.ratio(content, str(i["title"]))>0.5:
-                            if i.has_key("summary"):
+                            if "summary" in i:
                                 c = i["summary"]
                                 c = c.replace("a href", "a target='blank' href")
                                 return c, c
@@ -322,11 +334,11 @@ def grabTheContent(content, link, data, raw=False):
                             time.sleep(30)
     if "scripting.com" in link:
         f = feedparser.parse("http://scripting.com/rss.xml")
-        if f.has_key("entries"):
+        if "entries" in f:
             for i in f["entries"]:
-                if i.has_key("title"):
+                if "title" in i:
                     if Levenshtein.ratio(content, str(i["title"]))>0.5:
-                        if i.has_key("summary"):
+                        if "summary" in i:
                             c = i["summary"]
                             c = c.replace("a href", "a target='blank' href")
                             return text2simpleHtml(c), text2simpleHtml(grabContent(link, c))
@@ -349,7 +361,7 @@ def grabTheContent(content, link, data, raw=False):
     return content, sanicontent
 
 def processHistogram(h):
-    return float(len(set(h)))/float(len(h))     
+    return old_div(float(len(set(h))),float(len(h)))     
     
 class getWidthHeightImage(threading.Thread):
     def __init__ (self,img):
@@ -368,7 +380,7 @@ class getWidthHeightImage(threading.Thread):
         self.img = ll[0]
         try:
             try:
-                file = urllib.urlopen(self.img)
+                file = urllib.request.urlopen(self.img)
                 fdata = file.read()
                 im = cStringIO.StringIO(fdata) # constructs a StringIO holding the image
                 i = Image.open(im)            
@@ -376,7 +388,7 @@ class getWidthHeightImage(threading.Thread):
                 self.format = i.format
                 if fdata:
                     self.data = base64.encodestring(fdata)
-            except Exception,e:
+            except Exception as e:
                 clog(self.img+": "+str(e))
                 c = fetch(self.img)
                 fdata = cStringIO.StringIO(c["data"])
@@ -399,7 +411,7 @@ class getWidthHeightImage(threading.Thread):
             #print self.img
             #print processHistogram(i.histogram())
             #print "----------------"
-        except Exception,e:
+        except Exception as e:
             clog(self.img+": "+str(e))
 
 def returnTopDomainAndHost(url):
@@ -423,9 +435,9 @@ def checkURL(url):
     try:
         if "leeg." in url or "empty." in url or "spacer." in url or "trans." in url:
             return False
-        h = urllib2.urlopen(url).headers.headers
+        h = urllib.request.urlopen(url).headers.headers
         return True
-    except Exception, e:
+    except Exception as e:
         clog("checkUrl:"+str(url)+" "+str(e))
         return False
     
@@ -455,7 +467,7 @@ def findBiggestImages(url, html, tweet_id_str, id_str):
     cnt = 0
     ads = cPickle.load(open("/home/rabshakeh/Newsrivr/daemons/adservers.pickle", "r"))    
     for i in imgs:
-        if i.has_key("src"):
+        if "src" in i:
             td, host = returnTopDomainAndHost(i["src"])
             if td in ads or "/adx/" in i["src"] \
             or "adx_" in i["src"] \
@@ -472,7 +484,7 @@ def findBiggestImages(url, html, tweet_id_str, id_str):
             or ("logo" in i["src"] and ".gif" in i["src"]):
                 pass
             else:
-                if i.has_key("src"):
+                if "src" in i:
                     if len(i["src"])>0:
                         if i["src"][0]!="/" and i["src"][0].lower()!="h":
                             i["src"] = "../"+i["src"]
@@ -520,7 +532,7 @@ def findBiggestImages(url, html, tweet_id_str, id_str):
                     else:
                         i.save(outdata, format)                    
                         biggest["thumbnail"] = "data:image/jpeg;base64,"+base64.encodestring(outdata.getvalue())
-                except Exception, e:
+                except Exception as e:
                     clog("thumbnail:"+str(e))
                 #if "twitpic" in biggest["src"] or "media.egotastic.com" in biggest["src"] or "plixi" in html.lower():
                 biggest["format"]=wh[2].lower()
@@ -534,7 +546,7 @@ def findBiggestImages(url, html, tweet_id_str, id_str):
                     drops.create_index([("tweet_id_str",DESCENDING), ("histogram_md5",DESCENDING)], unique=True);
                 try:
                     getCollImageMd5s().insert ({'id_str':id_str, 'tweet_id_str':tweet_id_str, 'histogram_md5':biggest["histogram_md5"]}, safe=True)
-                except Exception, e:
+                except Exception as e:
                     clog("findBiggestImages: "+str(e))
     return biggest, num_big_images
 
@@ -575,11 +587,11 @@ def smart_str(s, encoding='utf-8', strings_only=False, errors='strict'):
 
     If strings_only is True, don't convert (some) non-string-like objects.
     """
-    if strings_only and isinstance(s, (types.NoneType, int)):
+    if strings_only and isinstance(s, (type(None), int)):
         return s
     if isinstance(s, Promise):
-        return unicode(s).encode(encoding, errors)
-    elif not isinstance(s, basestring):
+        return str(s).encode(encoding, errors)
+    elif not isinstance(s, str):
         try:
             return str(s)
         except UnicodeEncodeError:
@@ -589,8 +601,8 @@ def smart_str(s, encoding='utf-8', strings_only=False, errors='strict'):
                 # further exception.
                 return ' '.join([smart_str(arg, encoding, strings_only,
                         errors) for arg in s])
-            return unicode(s).encode(encoding, errors)
-    elif isinstance(s, unicode):
+            return str(s).encode(encoding, errors)
+    elif isinstance(s, str):
         return s.encode(encoding, errors)
     elif s and encoding != 'utf-8':
         return s.decode('utf-8', errors).encode(encoding, errors)
@@ -604,7 +616,7 @@ def urlquote(url, safe='/'):
     can safely be used as part of an argument to a subsequent iri_to_uri() call
     without double-quoting occurring.
     """
-    return toUTF8(urllib.quote(smart_str(url), safe))
+    return toUTF8(urllib.parse.quote(smart_str(url), safe))
     
 def urlize(text, trim_url_limit=None, nofollow=False, autoescape=False):
     """
@@ -750,7 +762,7 @@ def youtubeVideoFromJS(data):
 def youtubeVideoTagFromHTMLParam2(data):
     '<param name="movie" value="http://www.youtube.com/e/gkwrYiP6dck">'
     for param in BeautifulSoup(data, parseOnlyThese=SoupStrainer("param")):
-        if param.has_key("value"):
+        if "value" in param:
             value = param["value"]
             if "youtube" in value:
                 value = value.split("e/")
@@ -763,7 +775,7 @@ def youtubeVideoTagFromHTMLParam2(data):
 def youtubeVideoTagFromHTMLParam(data):
     "http://www.youtube.com/v/-8MvWg-wCtE?fs=1&hl=en_US"
     for param in BeautifulSoup(data, parseOnlyThese=SoupStrainer("param")):
-        if param.has_key("value"):
+        if "value" in param:
             value = param["value"]
             if "youtube" in value:
                 value = value.split("v/")
@@ -776,7 +788,7 @@ def youtubeVideoTagFromHTMLParam(data):
 def youtubeTagFromIframe(data):
     '<p><iframe src="http://www.youtube.com/embed/GATIYgOKp_8" width="560" height="345" frameborder="0"></iframe></p>'
     for iframe in BeautifulSoup(data, parseOnlyThese=SoupStrainer("iframe")):
-        if iframe.has_key("src"):
+        if "src" in iframe:
             if "youtube.com/embed/" in iframe["src"]:
                 s = iframe["src"].split("embed/")
                 if len(s)>0:
@@ -785,7 +797,7 @@ def youtubeTagFromIframe(data):
 def youtubeTagFromObject(data):
     '<p><object height="269" width="425"><embed src="http://www.youtube.com/v/6W07bFa4TzM?fs=1&amp;hl=en_US" type="application/x-shockwave-flash" allowscriptaccess="always" height="269" width="425"></object></p>'
     for embed in BeautifulSoup(data, parseOnlyThese=SoupStrainer("embed")):
-        if embed.has_key("src"):
+        if "src" in embed:
             return youtubeVideoTagFromUrl3(embed["src"])
 
 def youtubeTagFromObject2(data):
@@ -831,7 +843,7 @@ def youtubeFromJSON(data):
                         ds = ds[0].split("/")
                         if len(ds)>0:
                             return ds[len(ds)-1]
-    except Exception, e:
+    except Exception as e:
         clog(e)
         return None
     
@@ -885,7 +897,7 @@ def parseYoutube(url, data, tweet_id_str, id_str):
         return None
     
     jsonurl = "http://gdata.youtube.com/feeds/api/videos/"+videotag+"?v=2&alt=json-in-script&callback=YoutubeCallback"
-    jsondata = urllib.urlopen(jsonurl).read();
+    jsondata = urllib.request.urlopen(jsonurl).read();
 
     if "errors" in str(jsondata) or "414 Request-URI Too Large" in str(jsondata):
         return None
@@ -910,9 +922,9 @@ def parseYoutube(url, data, tweet_id_str, id_str):
 def parseTed(url, data):
     if "ted.com" in url.strip().lower():
         for input in BeautifulSoup(data, parseOnlyThese=SoupStrainer("input")):
-            if input.has_key("class"):
+            if "class" in input:
                 if input["class"]=="copy_paste":
-                    if input.has_key("value"):
+                    if "value" in input:
                         return input["value"]
     return None
 
@@ -920,12 +932,12 @@ def parseVimeo(data):
     '<link rel="alternate" href="http://vimeo.com/api/oembed.json?url=http://vimeo.com/19231255" type="application/json+oembed" />'
     for link in BeautifulSoup(data, parseOnlyThese=SoupStrainer("link")):
         if "json" in str(link):
-            if link.has_key("href"):
+            if "href" in link:
                 data = fetch(link['href'])
-                if data.has_key("data"):
+                if "data" in data:
                     jd = simplejson.loads(data["data"])
                     for iframe in BeautifulSoup(jd["html"], parseOnlyThese=SoupStrainer("iframe")):
-                        if iframe.has_key("src"):
+                        if "src" in iframe:
                             jd["iframe"] = iframe["src"]
                             try:
                                 jd["desc"] = urlize(jd["description"])
@@ -942,15 +954,15 @@ def getVimeoClipId(s):
             soup = BeautifulSoup(s)
             for obj in soup.findAll("object"):
                 for param in obj.findAll("param"):
-                    if param.has_key("name"):
+                    if "name" in param:
                         if param["name"]=="src":
-                            if param.has_key("value"):
+                            if "value" in param:
                                 s=param["value"].split("clip_id=")
                                 if len(s)>1:
                                     clipid = s[1].split("&")[0].strip()                                    
                                     return clipid
         return ""
-    except Exception, e:
+    except Exception as e:
         clog(e)
         return ""
 
@@ -964,17 +976,17 @@ def parseSlideShare(url):
         x = x.replace("embed name=", "embed wmode='transparent' name=")
         x = x.replace('<param name="allowFullScreen" value="true">', '<param name="allowFullScreen" value="true"></param><param name="wmode" value="transparent"></param>')
         return x
-    except Exception, e:
+    except Exception as e:
         return "Couldn't fetch slideshare:"+str(url)+"<hr>"+str(e)
    
 def parseCinch(url, data):
     try:
         from BeautifulSoup import BeautifulStoneSoup
         for a in BeautifulSoup(data, parseOnlyThese=SoupStrainer("a")):
-            if a.has_key("href"):
+            if "href" in a:
                 if "mp3" in a["href"]:
                     return {'mp3':urlparse.urljoin(url, a["href"])}
-    except Exception, e:
+    except Exception as e:
         clog("Couldn't parse cinch"+str(e))
         return None
     
@@ -1050,7 +1062,7 @@ def procesContentToNewsRivrDrop(content, id_str, screen_name, userid, tweet_id_s
                         processed_content["htmlmd5"]=m2.hexdigest()
                     else:
                         processed_content["htmlmd5"]=processed_content["md5"]
-                    if i.has_key("url"):
+                    if "url" in i:
                         photosites = ["twitrpix", "icanhascheezburger", "flickr", "twitpic", "yfrog", "instagr.am", "mobypicture", "picplz.com", "plixi"]
                         td, host = returnTopDomainAndHost(i["url"])
                         #print td, host, len(followed_link["simplehtml"])
@@ -1190,15 +1202,15 @@ def base64ProfilePic(t, d):
             if "profile_image_url" in t["user"]:
                 bt = t["user"]["profile_image_url"].replace("_normal", "_reasonably_small")
                 try:
-                    data = urllib.urlopen(bt).read()
+                    data = urllib.request.urlopen(bt).read()
                     fdata = cStringIO.StringIO(data)
                     i = Image.open(fdata)
-                except (Exception), e:
-                    print e
-                    data = urllib.urlopen(d["user"]["profile_image_url"]).read()
+                except (Exception) as e:
+                    print(e)
+                    data = urllib.request.urlopen(d["user"]["profile_image_url"]).read()
                     fdata = cStringIO.StringIO(data)
                     i = Image.open(fdata)
-                if float(i.size[1]) / float(i.size[0])>0.5:            
+                if old_div(float(i.size[1]), float(i.size[0]))>0.5:            
                     nh = float(i.size[1]) / float(i.size[0]) * 80
                     i = i.resize((80, int(nh)),Image.ANTIALIAS)
                     outdata = cStringIO.StringIO()
@@ -1226,7 +1238,7 @@ def getLinkDensityPara(html):
     elem = BeautifulSoup(html)
     link_length = len("".join([i.text or "" for i in elem.findAll("a")]))
     text_length = len(_text(elem))
-    return float(link_length) / max(text_length, 1)
+    return old_div(float(link_length), max(text_length, 1))
 
 def main():
     #c = open("test.html", "r").read()
@@ -1275,8 +1287,8 @@ def main():
     
     clog(drop)
     open("test.json", "w").write(str(drop))
-    print
-    print
+    print()
+    print()
     try:
         os.remove("test.html")
     except:
@@ -1313,11 +1325,11 @@ function showContent(id_str) {
             pass
         try:
             ht += "<br/><b>vimeo link: "+str(i["vimeo"]["video_id"])+"</b><br/><br/>"
-        except Exception, e:
+        except Exception as e:
             pass
         try:
             ht += i["simplehtml"]
-        except Exception, e:
+        except Exception as e:
             clog("geen html gevonden"+str(e))
         if "adddivider" in i:
             ht += "<hr>"

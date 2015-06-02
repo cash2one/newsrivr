@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
 import os
 import time
 import pymongo
@@ -48,7 +54,7 @@ def main():
 	for i in getCollDrops().find():
 		ids.add(i["id_str"])
 		cnt += 1
-	print len(ids), cnt
+	print(len(ids), cnt)
 	return
 
 	cnt2 = 0
@@ -64,7 +70,7 @@ def main():
 					getCollDrops().remove({"id_str":id}, safe=True)
 				cnt2 += 1
 				if cnt2%1000==0:
-					print cnt2
+					print(cnt2)
 					time.sleep(1)
 		getCollDrops().save(cd, safe=True)
 			
@@ -72,4 +78,4 @@ def main():
 		
 if __name__=='__main__':
 	main()
-	print "done"
+	print("done")

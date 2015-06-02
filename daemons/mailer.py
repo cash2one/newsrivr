@@ -1,3 +1,11 @@
+from __future__ import unicode_literals
+from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from builtins import open
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 
 import smtplib
 from email.header import Header
@@ -78,8 +86,8 @@ def GenerateMessage(from_name, from_email, reply_to_name, reply_to_email, to_nam
         if maintype == 'text':
             fp = open(fn)
             content = UnicodeDammit(fp.read())
-            content_charset = determine_encoding(content.unicode)
-            content = content.unicode.encode(content_charset)
+            content_charset = determine_encoding(content.str)
+            content = content.str.encode(content_charset)
         
             parta = MIMEText(content, _subtype=subtype, _charset=content_charset)
             fp.close()
@@ -117,19 +125,19 @@ def SendMessage(from_email, to_list, msg):
     
     try:
         result = mta.sendmail(from_email, to_list, msg.as_string());
-    except smtplib.SMTPRecipientsRefused, e:
+    except smtplib.SMTPRecipientsRefused as e:
         result = e.recipients;        
-    except smtplib.SMTPException, e:
+    except smtplib.SMTPException as e:
         for email in to_list:
             result[email] = str(e);        
-    except Exception, e:
+    except Exception as e:
         for email in to_list:
             result[email] = str(e);        
     
         
     try:
         mta.quit();
-    except Exception, e:
+    except Exception as e:
         pass;
     
     return result

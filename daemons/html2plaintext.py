@@ -40,6 +40,14 @@ Announcement here:
 Thanks to:
     Philipp (http://www.peterbe.com/plog/html2plaintext#c0708102y47)
 """
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from builtins import int
+from future import standard_library
+standard_library.install_aliases()
+from builtins import chr
 
 __version__='0.2'
 
@@ -128,7 +136,7 @@ def html2plaintext(html, body_id=None, encoding='utf-8'):
     
     return html
 
-import htmlentitydefs
+import html.entities
 # from http://effbot.org/zone/re-sub.htm#strip-html
 ##
 # Removes HTML or XML character references and entities from a text string.
@@ -142,15 +150,15 @@ def unescape(text):
             # character reference
             try:
                 if text[:3] == "&#x":
-                    return unichr(int(text[3:-1], 16))
+                    return chr(int(text[3:-1], 16))
                 else:
-                    return unichr(int(text[2:-1]))
+                    return chr(int(text[2:-1]))
             except ValueError:
                 pass
         else:
             # named entity
             try:
-                text = unichr(htmlentitydefs.name2codepoint[text[1:-1]])
+                text = chr(html.entities.name2codepoint[text[1:-1]])
             except KeyError:
                 pass
         return text # leave as is
@@ -183,7 +191,7 @@ Text elsewhere.
 </body>
 </html>
     '''
-    print html2plaintext(html, body_id='main')
+    print(html2plaintext(html, body_id='main'))
 
     
 if __name__=='__main__':

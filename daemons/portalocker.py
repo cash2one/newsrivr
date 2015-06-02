@@ -48,6 +48,13 @@ Author: Jonathan Feinberg <jdf@pobox.com>,
 Version: $Id: portalocker.py 5474 2008-05-16 20:53:50Z lowell $
 
 """
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from builtins import open
+from future import standard_library
+standard_library.install_aliases()
 
 
 __all__ = [
@@ -71,13 +78,13 @@ if os.name == 'posix':
     LOCK_SH = fcntl.LOCK_SH
     LOCK_NB = fcntl.LOCK_NB
 else:
-    raise RuntimeError, "PortaLocker only defined for nt and posix platforms"
+    raise RuntimeError("PortaLocker only defined for nt and posix platforms")
 
 if os.name == 'posix':
     def lock(file, flags):
         try:
             fcntl.flock(file.fileno(), flags)
-        except IOError, exc_value:
+        except IOError as exc_value:
             #  IOError: [Errno 11] Resource temporarily unavailable
             if exc_value[0] == 11:
                 raise LockException(LockException.LOCK_FAILED, exc_value[1])
@@ -98,11 +105,11 @@ if __name__ == '__main__':
         timestamp = strftime("%m/%d/%Y %H:%M:%S\n", localtime(time()))
         log.write( timestamp )
         
-        print "Wrote lines. Hit enter to release lock."
+        print("Wrote lines. Hit enter to release lock.")
         dummy = sys.stdin.readline()
         
         log.close()        
-    except Exception, e:
-        print "already running"
+    except Exception as e:
+        print("already running")
 
     

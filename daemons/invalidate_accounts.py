@@ -1,3 +1,12 @@
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from builtins import int
+from future import standard_library
+standard_library.install_aliases()
+from builtins import input
+from builtins import str
 #!/usr/bin/env python
 import time
 import pymongo
@@ -14,9 +23,9 @@ def getDB():
     while not conn:
         try:
             conn = pymongo.Connection(MONGOSERVER, MONGOPORT)
-        except Exception, e:
+        except Exception as e:
             time.sleep(1)
-            print "no conn", e
+            print("no conn", e)
     db = conn.newsrivr
     return db
 
@@ -31,28 +40,28 @@ def getCollDrops():
     return coll
 
 def clog(s):
-    print str(s)
+    print(str(s))
     
 def main():
-    print "PAS OP: INVALIDATE USERS !!!"
+    print("PAS OP: INVALIDATE USERS !!!")
     import random
     ri = random.randint(100,1000)
-    print ri
+    print(ri)
     keepdropuser = []
     deletedropuser = []
-    richeck = raw_input("Check: wat is het nummer: ")    
+    richeck = input("Check: wat is het nummer: ")    
     if ri==int(richeck):
-        print "ok, invalidating"
+        print("ok, invalidating")
         for u in getCollUsers().find():
             if "screen_name" in u:
                 if "rabshakeh" == u["screen_name"]:
-                    print u["screen_name"]
+                    print(u["screen_name"])
                     del u["access_token"]
                     getCollUsers().save(u, safe=True)
-        print "done"
+        print("done")
         return
     else:
-        print "bye"
+        print("bye")
 
             
 if __name__ == '__main__':

@@ -1,9 +1,18 @@
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from builtins import dict
+from builtins import int
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 #!/usr/bin/env python
 import os
 import pymongo
 import locale
 import time
-import urlparse
+import urllib.parse
 from datetime import datetime
 from oauthtwitter import OAuthApi
 from dateutil.parser import parse
@@ -56,8 +65,8 @@ def main():
     for user in getCollUsers().find():
         if "access_token" in user and "twitter_credentials" in user:
             #if user["screen_name"]=="rabshakeh":
-            print user["screen_name"]
-            access_token = dict(urlparse.parse_qsl(user["access_token"]))
+            print(user["screen_name"])
+            access_token = dict(urllib.parse.parse_qsl(user["access_token"]))
             twitter = OAuthApi(consumer_key, consumer_secret, access_token["oauth_token"], access_token["oauth_token_secret"])
             #user["twitter_credentials"] = twitter.VerifyCredentials()
             user_timeline = twitter.GetHomeTimeline({"count":5})                
@@ -78,4 +87,4 @@ def main():
         
 if __name__=="__main__":
     main()
-    print "done"
+    print("done")

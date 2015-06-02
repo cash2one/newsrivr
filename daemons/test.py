@@ -1,3 +1,9 @@
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
 
 from d_utils import *
 
@@ -28,13 +34,13 @@ def main():
 		slugs.append(i["slug"])
 	
 	for slug in slugs:
-		print slug
+		print(slug)
 		ulist = slug #"tech-companies"
 		coll = getCollDrops()
 		lst = getIdsList(user, ulist)
 		orquery = listToMongoOr(lst, "created_by")			
 		dcoll = coll.find({"$or":eval(orquery), "newsrivr_userid_md5":user["newsrivr_userid_md5"], "added_at_precise":{"$lt": 1308122797.6256001} }, sort=[("added_at_precise", -1)])
-		print dcoll.count()
+		print(dcoll.count())
 	
 	#for i in dcoll:
 	#	print i

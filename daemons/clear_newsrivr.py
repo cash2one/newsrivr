@@ -1,4 +1,10 @@
 #!/usr/bin/env python
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
 import pymongo
 from pymongo import ASCENDING, DESCENDING
 
@@ -35,20 +41,20 @@ def getCollImageMd5s():
     return coll
 
 def main():
-	print "users:", getCollUsers().count()
-	print "tweets:", getCollUnprocessedTweets().count()
-	print "drops:", getCollDrops().count()
-	print "imagemd5:", getCollImageMd5s().count()	
+	print("users:", getCollUsers().count())
+	print("tweets:", getCollUnprocessedTweets().count())
+	print("drops:", getCollDrops().count())
+	print("imagemd5:", getCollImageMd5s().count())	
 	#getCollUsers().drop()
 	getCollUnprocessedTweets().drop()
 	getCollDrops().drop()
 	getCollImageMd5s().drop()
-	print "users:", getCollUsers().count()
-	print "tweets:", getCollUnprocessedTweets().count()
-	print "drops:", getCollDrops().count()
-	print "imagemd5:", getCollImageMd5s().count()
+	print("users:", getCollUsers().count())
+	print("tweets:", getCollUnprocessedTweets().count())
+	print("drops:", getCollDrops().count())
+	print("imagemd5:", getCollImageMd5s().count())
 	
 if __name__=='__main__':
 	main()
 	
-	print "done"
+	print("done")

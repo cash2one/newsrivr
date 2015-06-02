@@ -1,3 +1,10 @@
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 #!/usr/bin/env python
 import time
 import pymongo
@@ -17,7 +24,7 @@ def getDB():
 			conn = pymongo.Connection(MONGOSERVER, MONGOPORT)
 		except:
 			time.sleep(1)
-			print "no conn"
+			print("no conn")
 	db = conn.newsrivr
 	return db
 
@@ -37,7 +44,7 @@ def addReadmoreDivs():
 	wcd = coll.count()
 	savethesedrops = []
 	for d in coll:
-		print wcd
+		print(wcd)
 		wcd = wcd - 1
 		#if 1==2:		
 		for l in d["followed_links"]:
@@ -77,15 +84,15 @@ def removeReadmoreDivs():
 	for d in coll:
 		wc = wc - 1
 		if wc%1000==0:
-			print wc
+			print(wc)
 		for l in d["followed_links"]:
 			html = ""
 			if "simplehtml" in l:
 				soup = BeautifulSoup(l["simplehtml"])
 				for tag in soup.findAll(True):
-					if tag.has_key("id"):
+					if "id" in tag:
 						if "hide_" in str(tag["id"]) and "nr_hide_" not in str(tag["id"]):
-							print wc, tag["id"]
+							print(wc, tag["id"])
 							tag.hidden = True
 						if "readmore_" in str(tag["id"])and "nr_readmore_" not in str(tag["id"]):
 							tag.extract()
@@ -107,14 +114,14 @@ Naast dat centrum komt er ook een&nbsp; Cyber Security Raad. Die wordt het&nbsp;
 	"""
 	soup = BeautifulSoup(html)
 	for tag in soup.findAll(True):
-		if tag.has_key("id"):
+		if "id" in tag:
 			if "hide_" in str(tag["id"]) and "nr_hide_" not in str(tag["id"]):
-				print tag["id"]
+				print(tag["id"])
 				tag.hidden = True
 			if "readmore_" in str(tag["id"])and "nr_readmore_" not in str(tag["id"]):
 				tag.extract()
 	html = soup.renderContents()
-	print html
+	print(html)
 	
 def main():
 	#test()

@@ -1,10 +1,18 @@
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from builtins import range
 
 from d_utils import *
 import twitter
 
 def clog(s):		
 	s= str(s)
-	print '\033[%96m'+strftime("%Y-%m-%d %H:%M:%S", gmtime())+": "+s+'\033[%0m'
+	print('\033[%96m'+strftime("%Y-%m-%d %H:%M:%S", gmtime())+": "+s+'\033[%0m')
 	
 def robustFetch(u):
 	for i in range(0,5):
@@ -54,7 +62,7 @@ def downloadLists(user):
 	return True
 
 def optimizeListStructureWithDropSlugs(user):
-	if "lists" in user.keys():
+	if "lists" in list(user.keys()):
 		if "error" in user["lists"]:
 			time.sleep(60)
 			return False

@@ -1,3 +1,11 @@
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from builtins import open
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
 s = """
 127.0.0.1 101com.com
 127.0.0.1 101order.com
@@ -2750,23 +2758,23 @@ s = """
 127.0.0.1 zintext.com
 127.0.0.1 zmedia.com
 """
-import urlparse
+import urllib.parse
 def makeadpickle():
     l = []
     for i in s.split("\n"):
         if len(i.strip())>0:
             l.append(i.split("127.0.0.1")[1].strip())
-    import cPickle
-    cPickle.dump(l, open("adservers.pickle", "w"))
-    ads = cPickle.load(open("/home/rabshakeh/Newsrivr/daemons/adservers.pickle", "r"))
-    print len(ads)
+    import pickle
+    pickle.dump(l, open("adservers.pickle", "w"))
+    ads = pickle.load(open("/home/rabshakeh/Newsrivr/daemons/adservers.pickle", "r"))
+    print(len(ads))
     #open("addservers.pickle", "w").write(pickle.dumps(l))
     
     u = "http://ad.nl.doubleclick.net/ad/P3851.Geenstijl.nl/lowcpm_rectangle;tile=4;sz=336x280;ord=[timestamp]?"
 
 
 def returnTopDomainAndHost(url):
-    x = urlparse.urlsplit(url)
+    x = urllib.parse.urlsplit(url)
     x = (x.netloc).split(".")
     dn = []
     h = ""
@@ -2784,5 +2792,5 @@ def returnTopDomainAndHost(url):
 
 
 u2 = "http://adscontent2.indiatimes.com/photo/6024024.cms"    
-print returnTopDomainAndHost(u2)
+print(returnTopDomainAndHost(u2))
 

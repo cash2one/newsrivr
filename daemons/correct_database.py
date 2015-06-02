@@ -1,3 +1,13 @@
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import absolute_import
+from builtins import open
+from builtins import int
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from past.utils import old_div
 from d_utils import *
 
 def doubles():
@@ -7,7 +17,7 @@ def doubles():
 	cnt = getCollDrops().count()
 	for d in getCollDrops().find():
 		if cnt%1000==0:
-			print "removing doubles:", cnt
+			print("removing doubles:", cnt)
 		cnt = cnt -1
 		for i in getCollDrops().find({"id_str":d["id_str"]}):
 			if i["_id"]!=d["_id"]:
@@ -17,7 +27,7 @@ def doubles():
 				getCollDrops().save(d, safe=True)
 				cnt2 = cnt2 + 1
 
-	print cnt2, "corrected"
+	print(cnt2, "corrected")
 
 def deleteImageYoutube(dropids):
 	cnt = len(dropids)
@@ -52,7 +62,7 @@ def trimTweetsPerUser():
 			for d in getCollDrops().find({"user_id_str":user_id_str, "favorites":{'$exists':False}}, sort=[("created_at", -1)]):				
 				if cnt>50:
 					created_at = d["created_at"]
-					print dropcount, u["user"]["screen_name"], created_at
+					print(dropcount, u["user"]["screen_name"], created_at)
 
 					for i in getCollDrops().find({"user_id_str":user_id_str, "favorites":{'$exists':False}, "created_at":{"$lt": created_at}}):
 						dropids.append(i["id_str"])					
@@ -69,7 +79,7 @@ def deleteEmptyFavorites():
 		if "favorites" in d:
 			if len(d["favorites"])==0:
 				getCollDrops().remove({"id_str":d["id_str"]}, safe=True)
-				print "removed", cnt, d["id_str"]
+				print("removed", cnt, d["id_str"])
 		cnt += 1
 
 def addThumbnailBase64():
@@ -81,7 +91,7 @@ def addThumbnailBase64():
 			del d["profile_image_url_small_base64"]
 			getCollDrops().save(d, safe=True)
 	cnt = getCollDrops().find({"profile_image_url_big_base64":{'$exists':False}}).count()
-	print "numdrops:",cnt			
+	print("numdrops:",cnt)			
 	clog("making cache")			
 	for d in getCollDrops().find({"profile_image_url_big_base64":{'$exists':True}}):
 		bt = d["user"]["profile_image_url"].replace("_normal", "_reasonably_small")
@@ -91,20 +101,20 @@ def addThumbnailBase64():
 		bt = d["user"]["profile_image_url"].replace("_normal", "_reasonably_small")
 		cnt -= 1;
 		if cnt%50==0:
-			print cnt, bt
+			print(cnt, bt)
 		if bt not in images:
 			try:
-				data = urllib.urlopen(bt).read()
+				data = urllib.request.urlopen(bt).read()
 				fdata = cStringIO.StringIO(data)
 				i = Image.open(fdata)
-			except (Exception), e:
-				print e
-				data = urllib.urlopen(d["user"]["profile_image_url"]).read()
+			except (Exception) as e:
+				print(e)
+				data = urllib.request.urlopen(d["user"]["profile_image_url"]).read()
 				fdata = cStringIO.StringIO(data)
 				i = Image.open(fdata)
-			if float(i.size[1]) / float(i.size[0])>0.5:
+			if old_div(float(i.size[1]), float(i.size[0]))>0.5:
 				if cnt%10==0:
-					print d["screen_name"], bt					
+					print(d["screen_name"], bt)					
 				nh = float(i.size[1]) / float(i.size[0]) * 80			
 				i = i.resize((80, int(nh)),Image.ANTIALIAS)
 				outdata = cStringIO.StringIO()
@@ -124,10 +134,10 @@ def addThumbnailBase64():
 					d["profile_image_url_small_base64"] = "data:image/"+format+";base64,"+base64.encodestring(outdata.getvalue())
 					images[bt] = (d["profile_image_url_big_base64"], d["profile_image_url_small_base64"])
 			else:
-				print "skipping:", float(i.size[1]) / float(i.size[0]), bt
+				print("skipping:", old_div(float(i.size[1]), float(i.size[0])), bt)
 		else:
 			if cnt%10==0:			
-				print d["screen_name"]
+				print(d["screen_name"])
 			d["profile_image_url_big_base64"] = images[bt][0]
 			d["profile_image_url_small_base64"] = images[bt][1]
 		getCollDrops().save(d, safe=True)
@@ -146,12 +156,12 @@ def correctDrops():
 			pass		
 		tosave.append(d)
 		if cnt%100==0:
-			print cnt
+			print(cnt)
 		cnt -= 1
 	for d in tosave:
 		getCollDrops().save(d, safe=True)
 		if cnt2%100==0:
-			print cnt2
+			print(cnt2)
 		cnt2 -= 1
 
 
@@ -159,20 +169,20 @@ def add_precise_added_at():
 	cnt = 0
 	#db.drops.find({"added_at_precise":{$gt:1304576821.0}}, {'added_at_precise':1, "added_at":1}).count()
 	coll = getCollDrops().find({"added_at_precise":{'$lt':1304598421.0}, 'newsrivr_userid_md5': 'b4cbd625a37ae741747c89f68b281998'}, sort=[("added_at_precise", -1)]).limit(400)
-	print coll.count(), "left"
+	print(coll.count(), "left")
 	l = []
 	for d in coll:
 		if cnt%100==0:
-			print cnt
+			print(cnt)
 		cnt = cnt + 1;
 		d["added_at_precise"] = time.mktime(d["created_at"].utctimetuple())
 		l.append(d)
-	print len(l)
+	print(len(l))
 	for d in l:
 		getCollDrops().save(d, safe=True)
 		cnt = cnt - 1
 		if cnt%100==0:
-			print cnt
+			print(cnt)
 
 def correctYoutubeKeys():
 	for k in getCollYoutubeTags().find():
@@ -193,7 +203,7 @@ def checkIfRunning():
         f.write(timestamp)
         f.write(str(os.getpid())+"\n")
         return f
-    except Exception, e:
+    except Exception as e:
         traceback.print_exc(file=sys.stdout)
         return None
 
@@ -210,8 +220,8 @@ def driver():
         pass
     except (KeyboardInterrupt, SystemExit):
         os.system("rm "+ks)
-    except Exception, e:
-        print e
+    except Exception as e:
+        print(e)
         os.system("rm "+ks)
     lf.close()
     os.remove(lf.name)

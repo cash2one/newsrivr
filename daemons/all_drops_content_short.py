@@ -1,3 +1,9 @@
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
 import os
 import time
 import pymongo
@@ -18,7 +24,7 @@ def getDB():
 			conn = pymongo.Connection(MONGOSERVER, MONGOPORT)
 		except:
 			time.sleep(1)
-			print "no conn"
+			print("no conn")
 	db = conn.newsrivr
 	return db
 
@@ -48,13 +54,13 @@ def getCollImageMd5s():
 	return coll
 
 def main():
-	print "DISABLED!!!"
+	print("DISABLED!!!")
 	return
 	cnt = 0;
 	for d in getCollDrops().find(sort=[("created_at", -1)]):
 		cnt += 1
 		if cnt%100==0:
-			print cnt
+			print(cnt)
 		for l in d["followed_links"]:
 			for j in l["link"]:
 				if "data" in j:

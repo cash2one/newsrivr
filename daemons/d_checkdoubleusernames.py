@@ -1,9 +1,16 @@
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 
 from d_utils import *
 
 def clog(s):		
 	s= str(s)
-	print '\033[%96m'+strftime("%Y-%m-%d %H:%M:%S", gmtime())+": "+s+'\033[%0m'
+	print('\033[%96m'+strftime("%Y-%m-%d %H:%M:%S", gmtime())+": "+s+'\033[%0m')
 
 def checkDoubleUsernames(exis_user_screen_name):
 	users_same_name = []

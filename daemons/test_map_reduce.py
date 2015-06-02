@@ -1,3 +1,10 @@
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import division
+from __future__ import absolute_import
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 
 from d_utils import *
 from pymongo.code import Code
@@ -50,7 +57,7 @@ function wordReduce(key,values){
     
     #Print the results
     for result in results.find():
-        print result['_id'] , result['value']['count']
+        print(result['_id'] , result['value']['count'])
     
 #while True:
 #	dtms = getTimeWithMS2()

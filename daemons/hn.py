@@ -12,17 +12,29 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+from __future__ import absolute_import
+from builtins import open
+from builtins import int
+from future import standard_library
+standard_library.install_aliases()
+from builtins import chr
+from builtins import str
+from builtins import range
+from past.utils import old_div
 
 	
 from xml.sax.saxutils import escape
 
-import urllib, re, os, urlparse
-import HTMLParser, feedparser
+import urllib.request, urllib.parse, urllib.error, re, os, urllib.parse
+import html.parser, feedparser
 from BeautifulSoup import BeautifulSoup, Comment
 from pprint import pprint
 import codecs
 import sys
-import htmlentitydefs
+import html.entities
 streamWriter = codecs.lookup("utf-8")[-1]
 sys.stdout = streamWriter(sys.stdout)
 
@@ -131,7 +143,7 @@ def latin1_to_ascii (unicrap):
         }
     r = ''
     for i in unicrap:
-        if xlate.has_key(ord(i)):
+        if ord(i) in xlate:
             r += xlate[ord(i)]
         elif ord(i) >= 0x80:
             pass
@@ -164,7 +176,7 @@ def _text(node):
 def get_link_density(elem):
 		link_length = len("".join([i.text or "" for i in elem.findAll("a")]))
 		text_length = len(_text(elem))
-		return float(link_length) / max(text_length, 1)
+		return old_div(float(link_length), max(text_length, 1))
 
 def removeFrontBreaks(s):
 	try:
@@ -179,7 +191,7 @@ def removeFrontBreaks(s):
 			if tagname=="br" or tagname=="p" and whitespace:
 				tag.extract()
 		return str(soup).strip()
-	except Exception, e:
+	except Exception as e:
 		clog(e)
 		return s
 
@@ -191,7 +203,7 @@ def convertentity(m):
 		except ValueError: 
 			return '&#%s;' % m.group(2) 
 	try: 
-		return htmlentitydefs.entitydefs[m.group(2)] 
+		return html.entities.entitydefs[m.group(2)] 
 	except KeyError: 
 		return '&%s;' % m.group(2) 
 def unquotehtml(s): 
@@ -204,7 +216,7 @@ def getNumLinks(s):
 		cnt = 0
 		soup = BeautifulSoup(s)
 		for a in soup.findAll("a"):
-			if a.has_key("href"):
+			if "href" in a:
 				#print a
 				cnt += 1
 		return cnt
@@ -215,7 +227,7 @@ def removeEmptyParas(html):
 	foundempty = False
 	soup = BeautifulSoup(html)
 	for p in soup.findAll("p"):
-		if p.has_key("id"):
+		if "id" in p:
 			if "error_" in p["id"]:
 				p.extract()
 		if 0==len(p.text.strip().replace("\n", "")):
@@ -261,7 +273,7 @@ def removeExtraBreaks(s):
 			else:
 				brcnt = 0
 		return str(soup)
-	except Exception, e:
+	except Exception as e:
 		clog(e)
 		return s
 
@@ -279,10 +291,10 @@ def grabContent(link, html):
 
 	try:
 		soup = BeautifulSoup(html)
-	except HTMLParser.HTMLParseError, e:
+	except html.parser.HTMLParseError as e:
 		try:
 			soup = BeautifulSoup(text2simpleHtml(html))
-		except HTMLParser.HTMLParseError:
+		except html.parser.HTMLParseError:
 			return ""
 
 	#print str(soup)	
@@ -290,10 +302,10 @@ def grabContent(link, html):
 	for s in soup.findAll("div"):
 		if get_link_density(s)>0.5 and len(s.renderContents())>1000:
 			s.extract()
-		if s.has_key("id"):
+		if "id" in s:
 			if SUPERNEGATIVE.match(str(s["id"]).lower()):
 				s.extract()
-		if s.has_key("class"):
+		if "class" in s:
 			if SUPERNEGATIVE.match(str(s["class"]).lower()):
 				s.extract()
 
@@ -301,10 +313,10 @@ def grabContent(link, html):
 		s.extract()
 		
 	for a in soup.findAll("a"):
-		if a.has_key("href"):
+		if "href" in a:
 			if "javascript:" in a["href"]:
 				a.extract()
-		if a.has_key("onclick"):
+		if "onclick" in a:
 			if "return " in a["onclick"]:
 				a.extract()
 	
@@ -320,7 +332,7 @@ def grabContent(link, html):
 			parents.append(parent)
 			parent.score = 0
 
-			if (parent.has_key("class")):
+			if ("class" in parent):
 				if (NEGATIVE.match(parent["class"].lower())):
 					#print parent["class"]
 					if len(parent.findAll('a'))>MAXLINKS:
@@ -333,7 +345,7 @@ def grabContent(link, html):
 						parent.score -= 150
 					parent.score += 50
 					
-			if (parent.has_key("id")):
+			if ("id" in parent):
 				if (NEGATIVE.match(parent["id"].lower())):
 					#print parent["id"]
 					if len(parent.findAll('a'))>MAXLINKS:
@@ -443,10 +455,10 @@ def grabContent(link, html):
 def fixLinks(parent, link):
 	tags = parent.findAll(True)	
 	for t in tags:
-		if (t.has_key("href")):
-			t["href"] = urlparse.urljoin(link, t["href"])
-		if (t.has_key("src")):
-			t["src"] = urlparse.urljoin(link, t["src"])
+		if ("href" in t):
+			t["href"] = urllib.parse.urljoin(link, t["href"])
+		if ("src" in t):
+			t["src"] = urllib.parse.urljoin(link, t["src"])
 
 def clean(top, tag, minWords=10000):
 	tags = top.findAll(tag)
@@ -479,7 +491,7 @@ def upgradeLink(link):
 		else:
 			content = ""
 			try:
-				html = urllib.urlopen(link).read()
+				html = urllib.request.urlopen(link).read()
 				content = grabContent(link, html)
 				filp = open(linkFile, "w")
 				filp.write(content)
@@ -493,7 +505,7 @@ def upgradeLink(link):
 	
 
 def upgradeFeed(feedUrl):	
-	feedData = urllib.urlopen(feedUrl).read()	
+	feedData = urllib.request.urlopen(feedUrl).read()	
 	upgradedLinks = []
 	parsedFeed = feedparser.parse(feedData)	
 	for entry in parsedFeed.entries:
@@ -523,7 +535,7 @@ def upgradeFeed(feedUrl):
 def clog(s):
 	from time import gmtime, strftime
 	s= str(s)
-	print '\033[%93m'+strftime("%Y-%m-%d %H:%M:%S", gmtime())+": "+s+'\033[%0m'
+	print('\033[%93m'+strftime("%Y-%m-%d %H:%M:%S", gmtime())+": "+s+'\033[%0m')
 
 if __name__ == "__main__":	
 	c = open("usedforscoring.html", "r").read()
